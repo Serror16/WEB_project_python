@@ -1,1 +1,11 @@
-# WEB_project_python
+1. Создано приложение tax_gateway.
+2. Реализованы 3 базовых эндпоинта из ТЗ:
+* POST /api/v1/tax/report — подача отчета (нужен query param country).
+
+* GET /api/v1/tax/status/<id> — проверка статуса.
+
+* POST /api/v1/tax/validate — предварительная валидация.
+
+Добавлена заглушка для сериализатора MockSerializer.
+
+Все запросы и ответы происходят в формате JSON.
