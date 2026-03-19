@@ -1,0 +1,5 @@
+django==6.0.3
+djangorestframework==3.17.0
+djangorestframework-xml==2.0.0
+defusedxml==0.7.1
+psycopg2-binary==2.9.11
