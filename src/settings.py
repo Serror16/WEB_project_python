@@ -93,7 +93,7 @@ WSGI_APPLICATION = 'src.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': os.getenv('DATABASE_ENGINE', default='django.db.backends.sqlite3'),
-        'NAME': os.getenv('DATABASE_NAME', default='db.unified_tax_system_postgres'),
+        'NAME': os.getenv('DATABASE_NAME', default='db.postgres'),
         'USER': os.getenv('DATABASE_USER', default='postgres'),
         'PASSWORD': os.getenv('DATABASE_PASSWORD', default='root'),
         'HOST': os.getenv('DATABASE_HOST', default='localhost'),
