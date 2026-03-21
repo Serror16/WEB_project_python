@@ -1,16 +1,15 @@
-name: unified_tax_system
+name: UnifiedTaxSystem
+
 services:
   db:
     image: postgres:15
-    environment:
-      DATABASE_ENGINE: ${DATABASE_ENGINE}
-      DATABASE_NAME: ${DATABASE_NAME}
-      DATABASE_USER: ${DATABASE_USER}
-      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
-      DATABASE_HOST: ${DATABASE_HOST}
-      DATABASE_PORT: ${DATABASE_PORT}
+    restart: unless-stopped
     ports:
       - ${DATABASE_PORTS}
+    environment:
+      POSTGRES_USERNAME: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
     volumes:
       - db_data:/var/lib/postgresql/data
 
