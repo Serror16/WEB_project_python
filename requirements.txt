@@ -4,3 +4,4 @@ djangorestframework-xml==2.0.0
 defusedxml==0.7.1
 psycopg2-binary==2.9.11
 split-settings==1.0.0
+djangorestframework_simplejwt==5.5.1
