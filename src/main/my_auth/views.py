@@ -1,19 +1,26 @@
-from rest_framework import status, permissions
+from rest_framework import status, permissions, generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
+from drf_spectacular.utils import extend_schema
 
-from .serializers import RegisterSerializer, LoginSerializer, UserResponseSerializer
+from .serializers import RegisterSerializer, LoginSerializer, UserResponseSerializer, RefreshTokenSerializer
 
 
-class RegisterView(APIView):
+class RegisterView(generics.GenericAPIView):
     """
     API регистрации
     """
 
     permission_classes = [permissions.AllowAny]
-    
+    serializer = RegisterSerializer
+
+    @extend_schema(
+        summary="Регистрация нового пользователя",
+        request=RegisterSerializer,
+        responses={201: UserResponseSerializer}
+    )
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         
@@ -31,13 +38,19 @@ class RegisterView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class LoginView(APIView):
+class LoginView(generics.GenericAPIView):
     """
     API входа
     """
 
     permission_classes = [permissions.AllowAny]
+    serializer_class = LoginSerializer
     
+    @extend_schema(
+        summary="Вход в систему",
+        request=LoginSerializer,
+        responses={200: UserResponseSerializer}
+    )
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         
@@ -55,19 +68,19 @@ class LoginView(APIView):
         return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
 
 
-class LogoutView(APIView):
+class LogoutView(generics.GenericAPIView):
     """
     API выхода
     """
     
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = RefreshTokenSerializer
     
     def post(self, request):
-        refresh_token = request.data.get('refresh')
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         
-        if not refresh_token:
-            return Response({'error': 'Refresh token обязателен'}, 
-                          status=status.HTTP_400_BAD_REQUEST)
+        refresh_token = serializer.validated_data.get('refresh')
         
         try:
             token = RefreshToken(refresh_token)
@@ -79,19 +92,19 @@ class LogoutView(APIView):
                           status=status.HTTP_400_BAD_REQUEST)
 
 
-class RefreshTokenView(APIView):
+class RefreshTokenView(generics.GenericAPIView):
     """
     API refresh токена
     """
     
     permission_classes = [permissions.AllowAny]
+    serializer_class = RefreshTokenSerializer
     
     def post(self, request):
-        refresh_token = request.data.get('refresh')
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
         
-        if not refresh_token:
-            return Response({'error': 'Refresh token обязателен'}, 
-                          status=status.HTTP_400_BAD_REQUEST)
+        refresh_token = serializer.validated_data.get('refresh')
         
         try:
             refresh = RefreshToken(refresh_token)
@@ -109,7 +122,4 @@ class UserInfoView(APIView):
     """
     
     permission_classes = [permissions.IsAuthenticated]
-    
-    def get(self, request):
-        serializer = UserResponseSerializer(request.user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    serializer_class = UserResponseSerializer

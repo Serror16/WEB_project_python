@@ -56,3 +56,6 @@ class UserResponseSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ("id", "email", "is_active", "created_at")
+
+class RefreshTokenSerializer(serializers.Serializer):
+    refresh = serializers.CharField(help_text="Ваш действующий refresh токен")
