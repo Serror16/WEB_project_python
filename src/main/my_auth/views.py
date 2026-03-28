@@ -35,7 +35,11 @@ class RegisterView(generics.GenericAPIView):
                 'message': 'Регистрация успешна'
             }, status=status.HTTP_201_CREATED)
         
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({
+            "error_code": "EXTERNAL_SERVICE_ERROR",
+            "message": "Invalid register data",
+            "details": {}
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LoginView(generics.GenericAPIView):
@@ -65,7 +69,11 @@ class LoginView(generics.GenericAPIView):
                 'message': 'Вход успешен'
             }, status=status.HTTP_200_OK)
         
-        return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({
+            "error_code": "EXTERNAL_SERVICE_ERROR",
+            "message": "Invalid login data",
+            "details": {}
+        }, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class LogoutView(generics.GenericAPIView):
@@ -86,10 +94,13 @@ class LogoutView(generics.GenericAPIView):
             token = RefreshToken(refresh_token)
             token.blacklist()
             return Response({'message': 'Выход выполнен успешно'}, 
-                          status=status.HTTP_200_OK)
+                            status=status.HTTP_200_OK)
         except TokenError:
-            return Response({'error': 'Неверный refresh token'}, 
-                          status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                "error_code": "EXTERNAL_SERVICE_ERROR",
+                "message": "Invalid refresh token",
+                "details": {}
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 
 class RefreshTokenView(generics.GenericAPIView):
@@ -112,8 +123,11 @@ class RefreshTokenView(generics.GenericAPIView):
                 'access': str(refresh.access_token)
             }, status=status.HTTP_200_OK)
         except TokenError:
-            return Response({'error': 'Неверный или истекший refresh token'}, 
-                          status=status.HTTP_401_UNAUTHORIZED)
+            return Response({
+                "error_code": "EXTERNAL_SERVICE_ERROR",
+                "message": "Invalid refresh token",
+                "details": {}
+            }, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class UserInfoView(APIView):

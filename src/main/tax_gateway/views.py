@@ -122,9 +122,8 @@ class TaxValidateView(APIView):
         serializer = TaxReportSerializer(data=request.data)
         if not serializer.is_valid():
             return Response({
-                "is_valid": False,
                 "error_code": "VALIDATION_ERROR",
-                "errors": serializer.errors
+                "message": str(serializer.errors)
             }, status=status.HTTP_400_BAD_REQUEST)
 
         adapter = get_adapter(country)
