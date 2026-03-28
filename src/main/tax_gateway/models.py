@@ -1,7 +1,9 @@
 from django.db import models
 from django.utils.dateformat import DateFormat
 
-
+"""
+The main ORM in the whole project. It is supposed to store all necessary data about taxes.
+"""
 class Tax(models.Model):
     # Taxable money. For example, It might be an income or a cost of a real estate
     _money: int = models.IntegerField()
