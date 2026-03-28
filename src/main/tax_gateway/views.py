@@ -4,11 +4,36 @@ from rest_framework import status
 from .adapters import get_adapter
 from .serializers import TaxReportSerializer
 import uuid
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 
 class TaxReportView(APIView):
     """ Эндпоинт для подачи отчета: POST /api/v1/tax/report """
 
+    serializer_class = TaxReportSerializer
+
+    @extend_schema(
+        summary="Подача налогового отчета",
+        description="Отправляет данные отчета через адаптер выбранной страны.",
+        parameters=[
+            OpenApiParameter(
+                name="country",
+                description="Название страны (например, russia)",
+                required=True,
+                type=str,
+            )
+        ],
+        responses={
+            201: {
+                "type": "object",
+                "properties": {
+                    "status": {"type": "string", "example": "accepted"},
+                    "report_id": {"type": "string", "format": "uuid"},
+                    "adapter_details": {"type": "object"}
+                }
+            }
+        }
+    )
     def post(self, request, format=None):
         country = request.query_params.get('country')
         if not country:
@@ -51,6 +76,13 @@ class TaxReportView(APIView):
 class TaxStatusView(APIView):
     """ Проверка статуса: GET /api/v1/tax/status/{report_id} """
 
+    @extend_schema(
+        summary="Проверка статуса",
+        parameters=[
+            OpenApiParameter(name="country", description="Название страны", type=str)
+        ]
+    )
+
     def get(self, request, report_id, format=None):
         country = request.query_params.get('country', 'russia')
 
@@ -69,6 +101,15 @@ class TaxStatusView(APIView):
 class TaxValidateView(APIView):
     """ Эндпоинт для предварительной проверки данных: POST /api/v1/tax/validate """
 
+    serializer_class = TaxReportSerializer
+
+    @extend_schema(
+        summary="Валидация данных",
+        parameters=[
+            OpenApiParameter(name="country", required=True, type=str)
+        ]
+    )
+    
     def post(self, request, format=None):
         country = request.query_params.get('country')
         if not country:

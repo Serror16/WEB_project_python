@@ -1,8 +1,13 @@
 from pathlib import Path
+import os
+from dotenv import load_dotenv
 from split_settings.tools import include
 from datetime import timedelta
 
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 include(
     "components/apps.py",
@@ -34,6 +39,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 SIMPLE_JWT = {
