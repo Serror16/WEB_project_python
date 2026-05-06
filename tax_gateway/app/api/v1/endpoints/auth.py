@@ -51,12 +51,8 @@ async def register(
     refresh = security_manager.create_refresh_token(data={"email": data.email})
     
     return RegisterResponse(
-        user = {
-            "id": user.id,
-            "email": user.email,
-            "is_active": user.is_active,
-            "created_at": user.created_at
-        },
+        id = user.id,
+        email = user.email,
         access = access,
         refresh = refresh,
         message = "Регистрация: успех"
@@ -101,12 +97,8 @@ async def login(
     refresh = security_manager.create_refresh_token(data={"email": data.email})
     
     return LoginResponse(
-        user = {
-            "id": user.id,
-            "email": user.email,
-            "is_active": user.is_active,
-            "created_at": user.created_at
-        },
+        id = user.id,
+        email = user.email,
         access = access,
         refresh = refresh,
         message = "Вход: успех"

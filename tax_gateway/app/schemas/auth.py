@@ -10,6 +10,7 @@ class RegisterResponse(BaseModel):
     email: str
     access_token: str
     refresh_token: str
+    message: str
 
 class LoginRequest(BaseModel):
     email: str
@@ -20,6 +21,7 @@ class LoginResponse(BaseModel):
     email: str
     access_token: str
     refresh_token: str
+    message: str
 
 class RefreshToAccessRequest(BaseModel):
     refresh: str
