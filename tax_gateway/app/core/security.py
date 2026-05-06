@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt                  #type: ignore
-from pathlib.context import CryptContext        #type: ignore
+from passlib.context import CryptContext
 from fastapi import HttpException, status
 from typing import Any
 
@@ -51,7 +51,7 @@ class SecurityManager:
         """
 
         data_copy = data.copy()
-        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+        expire = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
         data_copy.update({"exp": expire, "type": "refresh"})
         return jwt.encode(data_copy, settings.JWT_KEY, algorithm=settings.ALGORITHM)
     

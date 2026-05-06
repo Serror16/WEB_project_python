@@ -100,7 +100,7 @@ async def login(
     access = security_manager.create_access_token(data={"email": data.email})
     refresh = security_manager.create_refresh_token(data={"email": data.email})
     
-    return RegisterResponse(
+    return LoginResponse(
         user = {
             "id": user.id,
             "email": user.email,
@@ -109,7 +109,7 @@ async def login(
         },
         access = access,
         refresh = refresh,
-        message = "Регистрация: успех"
+        message = "Вход: успех"
     )
 
 @router.post(
