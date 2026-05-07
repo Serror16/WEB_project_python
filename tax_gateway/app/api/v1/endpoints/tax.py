@@ -1,10 +1,13 @@
 from fastapi import APIRouter, HTTPException, Query, status
 
 from tax_gateway.app.schemas.tax import TaxReportRequest, TaxReportResponse
+from tax_gateway.app.services.tax_service import TaxService
+
 # это позже тут должно быть раскомментировано
 # from app.services.tax_service import tax_service
 
 router = APIRouter(tags=["Tax Reports"])
+tax_service: TaxService = TaxService()
 
 @router.post("/report", response_model=TaxReportResponse, status_code=status.HTTP_201_CREATED)
 async def submit_tax_report(
@@ -18,7 +21,7 @@ async def submit_tax_report(
 
     try:
         # тут должно быть что-то такое:
-        # result = await tax_service.send_report(request_data.model_dump())
+        result = await tax_service.send_report(request_data)
         # (бизнес-логика+выбор адаптера)
 
         # имитация ответа!!!!!
@@ -49,7 +52,7 @@ async def check_tax_status(
 ):
     """Проверка статуса: GET /api/v1/tax/status/{report_id}?country=..."""
     try:
-        # status_data = await tax_service.get_status(country, report_id)
+        status_data = await tax_service.get_status(country, report_id)
         # имитация ответа!!!!!
         return {"status": "processing", "report_id": report_id}
     except Exception as e:
@@ -75,7 +78,7 @@ async def validate_tax_data(
     # иначе ошибка 422
 
     try:
-        # validation_result = await tax_service.validate(request_data.model_dump())
+        validation_result = await tax_service.validate(request_data)
         # имитация ответа!!!!!
         return {"is_valid": True, "message": "Ошибок не найдено"}
     except Exception as e:
