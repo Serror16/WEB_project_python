@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 """
-Copyright (C) 2026 Kekishev Andrei
+Copyright (C) 2026  Andrei Kekishev
 
 This file contains the TaxService, which is the main orchestrator of the system.
 """
@@ -25,7 +25,7 @@ TaxService handles the following logic:
 class TaxService:
     __slots__ = ()
 
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     # Fix needed

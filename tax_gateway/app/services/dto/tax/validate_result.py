@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 """
-Copyright (C) 2026 Kekishev Andrei
+Copyright (C) 2026  Andrei Kekishev
 """
 
 """

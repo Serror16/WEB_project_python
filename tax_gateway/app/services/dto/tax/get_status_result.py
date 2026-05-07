@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 """
-Copyright (C) 2026 Kekishev Andrei
+Copyright (C) 2026  Andrei Kekishev
 """
 import uuid
 
@@ -8,7 +8,7 @@ from tax_gateway.app.services.dto.tax.status import Status
 
 
 class GetStatusResult:
-    __slots__ = ("_status", "_report_id")
+    __slots__ = ("_report_id", "_status")
 
     _report_id: uuid.UUID
     _status: Status
