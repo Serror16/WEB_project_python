@@ -3,21 +3,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from datetime import datetime, timezone
 
-from app.db.session import get_db
-from app.db.models import User, BlacklistedToken
-from app.core.security import security_manager
-from app.schemas.auth import (
+from tax_gateway.app.db.session import get_db
+from tax_gateway.app.db.models import User, BlacklistedToken
+from tax_gateway.app.core.security import security_manager
+from tax_gateway.app.schemas.auth import (
     RegisterRequest, RegisterResponse, LoginRequest, LoginResponse,
     RefreshToAccessRequest, RefreshToAccessResponse, LogoutRequest, LogoutResponse
 )
-from app.schemas.errors import ErrorResponse
+from tax_gateway.app.schemas.errors import ErrorResponse
 
 
 router = APIRouter(prefix="/auth")
 
 @router.post(
     path="/register",
-    response_model=RegisterRequest,
+    response_model=RegisterResponse,
     status_code=status.HTTP_201_CREATED,
     responses={400: {"model": ErrorResponse}, 409: {"model": ErrorResponse}}
 )
@@ -48,13 +48,13 @@ async def register(
     await db.refresh(user)
 
     access = security_manager.create_access_token(data={"email": data.email})
-    refresh = security_manager.create_refresh_token(data={"email": data.email})
+    refresh_new = security_manager.create_refresh_token(data={"email": data.email})
     
     return RegisterResponse(
         id = user.id,
         email = user.email,
-        access = access,
-        refresh = refresh,
+        access_token = access,
+        refresh_token = refresh_new,
         message = "Регистрация: успех"
     )
 
@@ -94,13 +94,13 @@ async def login(
         )
     
     access = security_manager.create_access_token(data={"email": data.email})
-    refresh = security_manager.create_refresh_token(data={"email": data.email})
+    refresh_new = security_manager.create_refresh_token(data={"email": data.email})
     
     return LoginResponse(
         id = user.id,
         email = user.email,
-        access = access,
-        refresh = refresh,
+        access_token = access,
+        refresh_token = refresh_new,
         message = "Вход: успех"
     )
 

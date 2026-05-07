@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt                  #type: ignore
 from passlib.context import CryptContext
-from fastapi import HttpException, status
+from fastapi import HTTPException, status
 from typing import Any
 
 from .config import settings
@@ -66,7 +66,7 @@ class SecurityManager:
         try:
             return jwt.decode(token, settings.JWT_KEY, algorithms=[settings.ALGORITHM])
         except JWTError as e:
-            raise HttpException(
+            raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail={
                     "error_code": "INVALID_TOKEN",
