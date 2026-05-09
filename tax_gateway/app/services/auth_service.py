@@ -4,27 +4,26 @@ Copyright (C) 2026  Andrei Kekishev
 """
 from datetime import datetime, timezone
 
-from fastapi import Depends, HTTPException, status
-from sqlalchemy import select
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from tax_gateway.app.core.security import security_manager
 from tax_gateway.app.db.models import User, BlacklistedToken
-from tax_gateway.app.db.session import get_db
+from tax_gateway.app.repositories.auth_repository import AuthRepository
 from tax_gateway.app.schemas.auth import RegisterRequest, LoginRequest, RefreshToAccessRequest, LogoutRequest
 from tax_gateway.app.services.dto.auth.authentication_result import AuthenticationResult
 
 
 class AuthService:
-    __slots__ = ("database",)
+    __slots__ = ("_auth_repository",)
 
-    database: AsyncSession
+    _auth_repository: AuthRepository
 
-    def __init__(self) -> None:
-        self.database = Depends(get_db)
+    def __init__(self, database: AsyncSession) -> None:
+        self._auth_repository = AuthRepository(database)
 
     async def register(self, register_request: RegisterRequest) -> AuthenticationResult:
-        result = await self.database.execute(select(User).where(User.email == register_request.email))
+        result = await self._auth_repository.find_user_by_email(register_request.email)
         if result.scalar_one_or_none():
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
@@ -40,9 +39,7 @@ class AuthService:
             hashed_password=security_manager.get_hash_password(register_request.password)
         )
 
-        self.database.add(user)
-        await self.database.commit()
-        await self.database.refresh(user)
+        await self._auth_repository.save_user(user)
 
         access_token = security_manager.create_access_token(data={"email": register_request.email})
         refresh_token = security_manager.create_refresh_token(data={"email": register_request.email})
@@ -55,7 +52,7 @@ class AuthService:
         )
 
     async def login(self, login_request: LoginRequest) -> AuthenticationResult:
-        result = await self.database.execute(select(User).where(User.email == login_request.email))
+        result = await self._auth_repository.find_user_by_email(login_request.email)
         user = result.scalar_one_or_none()
 
         if not user or not security_manager.check_password(login_request.password, user.hashed_password):
@@ -90,17 +87,13 @@ class AuthService:
 
     async def refresh(self, refresh_to_access_request: RefreshToAccessRequest) -> str:
         payload = security_manager.decode_token(refresh_to_access_request.refresh)
-
         if payload.get("type") != "refresh":
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail={"error_code": "INVALID_TOKEN", "message": "Неверный тип токена", "details": {}}
             )
 
-        result = await self.database.execute(
-            select(BlacklistedToken).where(BlacklistedToken.token == refresh_to_access_request.refresh)
-        )
-
+        result = await self._auth_repository.find_token_by_refresh_token(refresh_to_access_request.refresh)
         if result.scalar_one_or_none():
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -138,8 +131,8 @@ class AuthService:
                 token=logout_request.refresh,
                 expires_at=datetime.fromtimestamp(payload["exp"], tz=timezone.UTC)
             )
-            self.database.add(blacklisted)
-            await self.database.commit()
+
+            await self._auth_repository.save_token(blacklisted)
 
         except HTTPException:
             raise

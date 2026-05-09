@@ -1,14 +1,19 @@
 ﻿from fastapi import APIRouter, Depends, Query, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from tax_gateway.app.adapters.russia_adapter import RussiaTaxAdapter
+from tax_gateway.app.db.session import get_db
 from tax_gateway.app.schemas.tax import TaxReportRequest, TaxReportResponse
 from tax_gateway.app.services.tax_service import TaxService
 
 
 router = APIRouter(tags=["Tax Reports"])
 
+_russia_adapter = RussiaTaxAdapter()
 
-def get_tax_service() -> TaxService:
-    return TaxService()
+
+async def get_tax_service(db: AsyncSession = Depends(get_db)) -> TaxService:
+    return TaxService(db, _russia_adapter)
 
 @router.post("/report", response_model=TaxReportResponse, status_code=status.HTTP_201_CREATED)
 async def submit_tax_report(
