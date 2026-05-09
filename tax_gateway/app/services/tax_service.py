@@ -7,11 +7,13 @@ This file contains the TaxService, which is the main orchestrator of the system.
 import uuid
 from typing import Optional
 
-from tax_gateway.app.schemas.tax import TaxReportRequest
-from tax_gateway.app.services.dto.tax.get_status_result import GetStatusResult
-from tax_gateway.app.services.dto.tax.send_report_result import SendReportResult
-from tax_gateway.app.services.dto.tax.status import Status
-from tax_gateway.app.services.dto.tax.validate_result import ValidateResult
+from app.schemas.tax import TaxReportRequest
+from app.services.dto.tax.get_status_result import GetStatusResult
+from app.services.dto.tax.send_report_result import SendReportResult
+from app.services.dto.tax.status import Status
+from app.services.dto.tax.validate_result import ValidateResult
+
+from app.adapters.russia_adapter import RussiaTaxAdapter
 
 """
 TaxService handles the following logic:
@@ -23,108 +25,65 @@ TaxService handles the following logic:
 
 
 class TaxService:
-    __slots__ = ()
+    __slots__ = ("_russia_adapter",)
 
     def __init__(self) -> None:
-        pass
+        #self.database = database
+        self._russia_adapter = RussiaTaxAdapter()
 
     # Fix needed
     async def send_report(self, tax_report_request: TaxReportRequest) -> SendReportResult:
         adapter: str = 'default'
 
-        try:
-            country: Optional[str] = tax_report_request.country
-            if country is None or country == "":
+        country: Optional[str] = tax_report_request.country
+        if country is None or country == "":
+            # result = defaultAdapter.send_report(tax_report_request)
+            return SendReportResult(Status.SUCCESS, uuid.uuid4())
+
+        match country:
+            case "US":
+                adapter = 'us'
+                # result = usaAdapter.send_report(tax_report_request)
+                return SendReportResult(Status.SUCCESS, uuid.uuid4())
+            case "RU":
+                adapter = 'ru'
+                return await self._russia_adapter.send_report(tax_report_request)
+            case _:
                 # result = defaultAdapter.send_report(tax_report_request)
                 return SendReportResult(Status.SUCCESS, uuid.uuid4())
-
-            match country:
-                case "US":
-                    adapter = 'us'
-                    # result = usaAdapter.send_report(tax_report_request)
-                    return SendReportResult(Status.SUCCESS, uuid.uuid4())
-                case "RU":
-                    adapter = 'ru'
-                    # result = russiaAdapter.send_report(tax_report_request)
-                    return SendReportResult(Status.SUCCESS, uuid.uuid4())
-                case _:
-                    # result = defaultAdapter.send_report(tax_report_request)
-                    return SendReportResult(Status.SUCCESS, uuid.uuid4())
-
-        except RuntimeError:
-            self._retry_send_report(adapter, tax_report_request, 10)
-
-    # Fix needed
-    @staticmethod
-    def _retry_send_report(adapter, request: TaxReportRequest, times: int) -> object:
-        for _ in range(times):
-            try:
-                return
-            # return adapter.send_report(request)
-            except RuntimeError as _:
-                pass
 
     # Fix needed
     async def get_status(self, country: str, report_id: str) -> GetStatusResult:
         adapter: str = 'default'
 
-        try:
-            match country:
-                case "US":
-                    adapter = 'us'
-                    # result = usaAdapter.send_report(tax_report_request)
-                    return GetStatusResult(Status.SUCCESS, uuid.uuid4())
-                case "RU":
-                    adapter = 'ru'
-                    # result = russiaAdapter.send_report(tax_report_request)
-                    return GetStatusResult(Status.SUCCESS, uuid.uuid4())
-                case _:
-                    # result = defaultAdapter.send_report(tax_report_request)
-                    return GetStatusResult(Status.SUCCESS, uuid.uuid4())
-
-        except RuntimeError:
-            self._retry_get_status(adapter, report_id, 10)
-
-    # Fix needed
-    @staticmethod
-    def _retry_get_status(adapter, report_id: str, times: int) -> object:
-        for _ in range(times):
-            try:
-                # return adapter.get_status(report_id)
-                return
-            except RuntimeError as _:
-                pass
+        match country:
+            case "US":
+                adapter = 'us'
+                # result = usaAdapter.send_report(tax_report_request)
+                return GetStatusResult(Status.SUCCESS, uuid.uuid4())
+            case "RU":
+                adapter = 'ru'
+                return await self._russia_adapter.get_status(report_id)
+            case _:
+                # result = defaultAdapter.send_report(tax_report_request)
+                return GetStatusResult(Status.SUCCESS, uuid.uuid4())
 
     async def validate(self, tax_report_request: TaxReportRequest) -> ValidateResult:
         adapter: str = 'default'
 
-        try:
-            country: Optional[str] = tax_report_request.country
-            if country is None or country == "":
+        country: Optional[str] = tax_report_request.country
+        if country is None or country == "":
+            # result = defaultAdapter.send_report(tax_report_request)
+            return ValidateResult(True)
+
+        match country:
+            case "US":
+                adapter = 'us'
+                # result = usaAdapter.send_report(tax_report_request)
+                return ValidateResult(True)
+            case "RU":
+                adapter = 'ru'
+                return await self._russia_adapter.validate(tax_report_request)
+            case _:
                 # result = defaultAdapter.send_report(tax_report_request)
                 return ValidateResult(True)
-
-            match country:
-                case "US":
-                    adapter = 'us'
-                    # result = usaAdapter.send_report(tax_report_request)
-                    return ValidateResult(True)
-                case "RU":
-                    adapter = 'ru'
-                    # result = russiaAdapter.send_report(tax_report_request)
-                    return ValidateResult(True)
-                case _:
-                    # result = defaultAdapter.send_report(tax_report_request)
-                    return ValidateResult(True)
-
-        except RuntimeError:
-            self._retry_validate(adapter, tax_report_request, 10)
-
-    @staticmethod
-    def _retry_validate(adapter, request: TaxReportRequest, times: int) -> object:
-        for _ in range(times):
-            try:
-                # return adapter.validate(report_id)
-                return
-            except RuntimeError as _:
-                pass

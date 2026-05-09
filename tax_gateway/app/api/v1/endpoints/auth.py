@@ -1,12 +1,12 @@
 from fastapi import APIRouter, status
 
-from tax_gateway.app.schemas.auth import (
+from app.schemas.auth import (
     RegisterRequest, RegisterResponse, LoginRequest, LoginResponse,
     RefreshToAccessRequest, RefreshToAccessResponse, LogoutRequest, LogoutResponse
 )
-from tax_gateway.app.schemas.errors import ErrorResponse
-from tax_gateway.app.services.auth_service import AuthService
-from tax_gateway.app.services.dto.auth.authentication_result import AuthenticationResult
+from app.schemas.errors import ErrorResponse
+from app.services.auth_service import AuthService
+from app.services.dto.auth.authentication_result import AuthenticationResult
 
 auth_service = AuthService()
 router = APIRouter(prefix="/auth")

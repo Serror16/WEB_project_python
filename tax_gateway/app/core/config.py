@@ -1,32 +1,32 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
-from dotenv import load_dotenv
-
-load_dotenv()
 
 class Settings(BaseSettings):
-
-    DATABASE_URL = Field(
+    DATABASE_URL: str = Field(
         default="postgresql+asyncpg://postgres:postgres@localhost:5432/postgres",
-        env="DATABASE_URL"
+        validation_alias="DATABASE_URL"
     )
 
-    JWT_KEY = Field(
+    JWT_KEY: str = Field(
         default="test-key-azaza", 
-        env="JWT_KEY"
+        validation_alias="JWT_KEY"
     )
-    ALGORITHM = Field(
+    ALGORITHM: str = Field(
         default="HS256",
-        env="JWT_ALGORITHM"
+        validation_alias="JWT_ALGORITHM"
     )
-    ACCESS_TOKEN_EXPIRE_MINUTES = 15
-    REFRESH_TOKEN_EXPIRE_DAYS = 7
+    
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    API_VERSION = "v1"
-    REQUEST_TIMEOUT = 30
+    API_VERSION: str = "v1"
+    REQUEST_TIMEOUT: int = 30
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = SettingsConfigDict(
+        env_file=".env", 
+        env_file_encoding="utf-8",
+        extra="ignore",
+        case_sensitive=True
+    )
     
 settings = Settings()

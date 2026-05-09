@@ -4,7 +4,7 @@ Copyright (C) 2026  Andrei Kekishev
 """
 import uuid
 
-from tax_gateway.app.services.dto.tax.status import Status
+from app.services.dto.tax.status import Status
 
 
 class SendReportResult:
