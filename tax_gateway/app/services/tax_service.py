@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MIT
+﻿# SPDX-License-Identifier: MIT
 """
 Copyright (C) 2026  Andrei Kekishev
 
@@ -7,13 +7,13 @@ This file contains the TaxService, which is the main orchestrator of the system.
 import uuid
 from typing import Optional
 
-from app.schemas.tax import TaxReportRequest
-from app.services.dto.tax.get_status_result import GetStatusResult
-from app.services.dto.tax.send_report_result import SendReportResult
-from app.services.dto.tax.status import Status
-from app.services.dto.tax.validate_result import ValidateResult
+from tax_gateway.app.schemas.tax import TaxReportRequest
+from tax_gateway.app.services.dto.tax.get_status_result import GetStatusResult
+from tax_gateway.app.services.dto.tax.send_report_result import SendReportResult
+from tax_gateway.app.services.dto.tax.status import Status
+from tax_gateway.app.services.dto.tax.validate_result import ValidateResult
 
-from app.adapters.russia_adapter import RussiaTaxAdapter
+from tax_gateway.app.adapters.russia_adapter import RussiaTaxAdapter
 
 """
 TaxService handles the following logic:

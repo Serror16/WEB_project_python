@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, Query, status
+﻿from fastapi import APIRouter, Depends, Query, status
 
-from app.schemas.tax import TaxReportRequest, TaxReportResponse
-from app.services.tax_service import TaxService
+from tax_gateway.app.schemas.tax import TaxReportRequest, TaxReportResponse
+from tax_gateway.app.services.tax_service import TaxService
 
 
 router = APIRouter(tags=["Tax Reports"])

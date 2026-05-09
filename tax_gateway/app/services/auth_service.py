@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: MIT
+﻿# SPDX-License-Identifier: MIT
 """
 Copyright (C) 2026  Andrei Kekishev
 """
@@ -8,11 +8,11 @@ from fastapi import Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import security_manager
-from app.db.models import User, BlacklistedToken
-from app.db.session import get_db
-from app.schemas.auth import RegisterRequest, LoginRequest, RefreshToAccessRequest, LogoutRequest
-from app.services.dto.auth.authentication_result import AuthenticationResult
+from tax_gateway.app.core.security import security_manager
+from tax_gateway.app.db.models import User, BlacklistedToken
+from tax_gateway.app.db.session import get_db
+from tax_gateway.app.schemas.auth import RegisterRequest, LoginRequest, RefreshToAccessRequest, LogoutRequest
+from tax_gateway.app.services.dto.auth.authentication_result import AuthenticationResult
 
 
 class AuthService:

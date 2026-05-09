@@ -1,12 +1,12 @@
-from typing import Optional
+﻿from typing import Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from app.core.security import security_manager
-from app.db.session import get_db
-from app.db.models import User
+from tax_gateway.app.core.security import security_manager
+from tax_gateway.app.db.session import get_db
+from tax_gateway.app.db.models import User
 
 security = HTTPBearer(auto_error=False)
 

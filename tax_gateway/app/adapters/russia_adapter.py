@@ -1,14 +1,14 @@
-import httpx
+﻿import httpx
 import logging
 import uuid
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
 
-from app.core.exceptions import ExternalServiceError
-from app.schemas.tax import TaxReportRequest
-from app.services.dto.tax.send_report_result import SendReportResult
-from app.services.dto.tax.get_status_result import GetStatusResult
-from app.services.dto.tax.validate_result import ValidateResult
-from app.services.dto.tax.status import Status
+from tax_gateway.app.core.exceptions import ExternalServiceError
+from tax_gateway.app.schemas.tax import TaxReportRequest
+from tax_gateway.app.services.dto.tax.send_report_result import SendReportResult
+from tax_gateway.app.services.dto.tax.get_status_result import GetStatusResult
+from tax_gateway.app.services.dto.tax.validate_result import ValidateResult
+from tax_gateway.app.services.dto.tax.status import Status
 
 logger = logging.getLogger(__name__)
 

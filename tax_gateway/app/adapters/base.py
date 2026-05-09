@@ -1,8 +1,8 @@
-from typing import Protocol
-from app.schemas.tax import TaxReportRequest
-from app.services.dto.tax.send_report_result import SendReportResult
-from app.services.dto.tax.get_status_result import GetStatusResult
-from app.services.dto.tax.validate_result import ValidateResult
+﻿from typing import Protocol
+from tax_gateway.app.schemas.tax import TaxReportRequest
+from tax_gateway.app.services.dto.tax.send_report_result import SendReportResult
+from tax_gateway.app.services.dto.tax.get_status_result import GetStatusResult
+from tax_gateway.app.services.dto.tax.validate_result import ValidateResult
 
 class TaxAdapterProtocol(Protocol):
     """

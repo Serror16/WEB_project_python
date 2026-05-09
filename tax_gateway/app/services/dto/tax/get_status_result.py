@@ -1,10 +1,10 @@
-# SPDX-License-Identifier: MIT
+﻿# SPDX-License-Identifier: MIT
 """
 Copyright (C) 2026  Andrei Kekishev
 """
 import uuid
 
-from app.services.dto.tax.status import Status
+from tax_gateway.app.services.dto.tax.status import Status
 
 
 class GetStatusResult:
