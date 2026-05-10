@@ -9,7 +9,7 @@ from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tax_gateway.app.adapters.base import TaxAdapterProtocol
+from tax_gateway.app.adapters.base import AbstractTaxAdapter
 from tax_gateway.app.schemas.tax import TaxReportRequest
 from tax_gateway.app.services.dto.tax.get_status_result import GetStatusResult
 from tax_gateway.app.services.dto.tax.send_report_result import SendReportResult
@@ -38,7 +38,7 @@ class TaxService:
 
     # Fix needed
     async def send_report(self, tax_report_request: TaxReportRequest) -> SendReportResult:
-        adapter: TaxAdapterProtocol = self._russia_adapter
+        adapter: AbstractTaxAdapter = self._russia_adapter
 
         country: Optional[str] = tax_report_request.country
         if country is None or country == "":
@@ -59,7 +59,7 @@ class TaxService:
 
     # Fix needed
     async def get_status(self, country: str, report_id: str) -> GetStatusResult:
-        adapter: TaxAdapterProtocol = self._russia_adapter
+        adapter: AbstractTaxAdapter = self._russia_adapter
 
         match country:
             case "US":
@@ -75,7 +75,7 @@ class TaxService:
 
     # Fix needed
     async def validate(self, tax_report_request: TaxReportRequest) -> ValidateResult:
-        adapter: TaxAdapterProtocol = self._russia_adapter
+        adapter: AbstractTaxAdapter = self._russia_adapter
 
         country: Optional[str] = tax_report_request.country
         if country is None or country == "":
