@@ -17,79 +17,57 @@ from tax_gateway.app.services.dto.tax.status import Status
 from tax_gateway.app.services.dto.tax.validate_result import ValidateResult
 
 from tax_gateway.app.adapters.russia_adapter import RussiaTaxAdapter
+from tax_gateway.app.adapters.usa_adapter import UsaTaxAdapter
 
-"""
-TaxService handles the following logic:
-1. Gets data from API-layer.
-2. Chooses the needed adapter by country argument.
-3. Saves the audit of requests to the database.
-"""
-
-# Add logs
 class TaxService:
-    __slots__ = ("_database", "_russia_adapter")
+    __slots__ = ("_database", "_russia_adapter", "_usa_adapter")
 
     _database: AsyncSession
     _russia_adapter: RussiaTaxAdapter
+    _usa_adapter: UsaTaxAdapter
 
-    def __init__(self, database: AsyncSession, russia_adapter: RussiaTaxAdapter) -> None:
+    def __init__(self, database: AsyncSession, russia_adapter: RussiaTaxAdapter, usa_adapter: UsaTaxAdapter) -> None:
         self._database = database
         self._russia_adapter = russia_adapter
+        self._usa_adapter = usa_adapter
 
-    # Fix needed
     async def send_report(self, tax_report_request: TaxReportRequest) -> SendReportResult:
-        adapter: AbstractTaxAdapter = self._russia_adapter
-
         country: Optional[str] = tax_report_request.country
         if country is None or country == "":
-            # result = defaultAdapter.send_report(tax_report_request)
             return SendReportResult(Status.SUCCESS, uuid.uuid4())
 
         match country:
             case "US":
-                # adapter = 'us'
-                # result = usaAdapter.send_report(tax_report_request)
-                return SendReportResult(Status.SUCCESS, uuid.uuid4())
+                adapter: AbstractTaxAdapter = self._usa_adapter
             case "RU":
-                adapter = self._russia_adapter
-                return await self._russia_adapter.send_report(tax_report_request)
+                adapter: AbstractTaxAdapter = self._russia_adapter
             case _:
-                # result = defaultAdapter.send_report(tax_report_request)
                 return SendReportResult(Status.SUCCESS, uuid.uuid4())
 
-    # Fix needed
-    async def get_status(self, country: str, report_id: str) -> GetStatusResult:
-        adapter: AbstractTaxAdapter = self._russia_adapter
+        return await adapter.send_report(tax_report_request)
 
+    async def get_status(self, country: str, report_id: str) -> GetStatusResult:
         match country:
             case "US":
-                # adapter = 'us'
-                # result = usaAdapter.send_report(tax_report_request)
-                return GetStatusResult(Status.SUCCESS, uuid.uuid4())
+                adapter: AbstractTaxAdapter = self._usa_adapter
             case "RU":
-                adapter = self._russia_adapter
-                return await self._russia_adapter.get_status(report_id)
+                adapter: AbstractTaxAdapter = self._russia_adapter
             case _:
-                # result = defaultAdapter.send_report(tax_report_request)
                 return GetStatusResult(Status.SUCCESS, uuid.uuid4())
+                
+        return await adapter.get_status(report_id)
 
-    # Fix needed
     async def validate(self, tax_report_request: TaxReportRequest) -> ValidateResult:
-        adapter: AbstractTaxAdapter = self._russia_adapter
-
         country: Optional[str] = tax_report_request.country
         if country is None or country == "":
-            # result = defaultAdapter.send_report(tax_report_request)
             return ValidateResult(True)
 
         match country:
             case "US":
-                # adapter = 'us'
-                # result = usaAdapter.send_report(tax_report_request)
-                return ValidateResult(True)
+                adapter: AbstractTaxAdapter = self._usa_adapter
             case "RU":
-                adapter = self._russia_adapter
-                return await self._russia_adapter.validate(tax_report_request)
+                adapter: AbstractTaxAdapter = self._russia_adapter
             case _:
-                # result = defaultAdapter.send_report(tax_report_request)
                 return ValidateResult(True)
+                
+        return await adapter.validate(tax_report_request)
