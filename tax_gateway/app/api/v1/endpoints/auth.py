@@ -10,7 +10,8 @@ from tax_gateway.app.schemas.errors import ErrorResponse
 from tax_gateway.app.services.auth_service import AuthService
 from tax_gateway.app.services.dto.auth.authentication_result import AuthenticationResult
 
-router = APIRouter(prefix="/auth")
+router = APIRouter(prefix="/auth", tags=["Authentication"])
+
 
 async def get_auth_service(db: AsyncSession = Depends(get_db)) -> AuthService:
     return AuthService(db)
@@ -21,11 +22,16 @@ async def get_auth_service(db: AsyncSession = Depends(get_db)) -> AuthService:
     status_code=status.HTTP_201_CREATED,
     responses={400: {"model": ErrorResponse}, 409: {"model": ErrorResponse}}
 )
-async def register(data: RegisterRequest, auth_service: AuthService = Depends(get_auth_service)):
-    result: AuthenticationResult = await auth_service.register(data)
+async def register(
+        request_data: RegisterRequest,
+        auth_service: AuthService = Depends(get_auth_service)
+):
+    """Эндпоинт для регистрации нового пользователя: POST /api/v1/auth/register"""
+
+    result: AuthenticationResult = await auth_service.register(request_data)
 
     return RegisterResponse(
-        id=result.id,
+        id=str(result.id),
         email=result.email,
         access_token=result.access_token,
         refresh_token=result.refresh_token,
@@ -38,11 +44,16 @@ async def register(data: RegisterRequest, auth_service: AuthService = Depends(ge
     response_model=LoginResponse,
     responses={401: {"model": ErrorResponse}}
 )
-async def login(data: LoginRequest, auth_service: AuthService = Depends(get_auth_service)):
-    result: AuthenticationResult = await auth_service.login(data)
+async def login(
+        request_data: LoginRequest,
+        auth_service: AuthService = Depends(get_auth_service)
+):
+    """Эндпоинт для входа в систему: POST /api/v1/auth/login"""
+
+    result: AuthenticationResult = await auth_service.login(request_data)
 
     return LoginResponse(
-        id=result.id,
+        id=str(result.id),
         email=result.email,
         access_token=result.access_token,
         refresh_token=result.refresh_token,
@@ -55,8 +66,13 @@ async def login(data: LoginRequest, auth_service: AuthService = Depends(get_auth
     response_model=RefreshToAccessResponse,
     responses={401: {"model": ErrorResponse}}
 )
-async def refresh(data: RefreshToAccessRequest, auth_service: AuthService = Depends(get_auth_service)):
-    token: str = await auth_service.refresh(data)
+async def refresh(
+        request_data: RefreshToAccessRequest,
+        auth_service: AuthService = Depends(get_auth_service)
+):
+    """Эндпоинт для обновления access-токена: POST /api/v1/auth/refresh"""
+
+    token: str = await auth_service.refresh(request_data)
 
     return RefreshToAccessResponse(access=token)
 
@@ -66,7 +82,12 @@ async def refresh(data: RefreshToAccessRequest, auth_service: AuthService = Depe
     response_model=LogoutResponse,
     responses={400: {"model": ErrorResponse}}
 )
-async def logout(data: LogoutRequest, auth_service: AuthService = Depends(get_auth_service)):
-    await auth_service.logout(data)
+async def logout(
+        request_data: LogoutRequest,
+        auth_service: AuthService = Depends(get_auth_service)
+):
+    """Эндпоинт для выхода из аккаунта (инвалидация refresh-токена): POST /api/v1/auth/logout"""
+
+    await auth_service.logout(request_data)
 
     return LogoutResponse(message="Выход выполнен успешно")
