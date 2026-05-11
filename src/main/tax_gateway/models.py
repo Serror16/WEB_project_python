@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 from django.utils.dateformat import DateFormat
 
 """
@@ -91,3 +92,32 @@ class Tax(models.Model):
     @payload.setter
     def payload(self, payload: dict) -> None:
         self._payload = payload
+
+class AuditLog(models.Model):
+    """
+    Модель для аудита всех входящих запросов и ответов.
+    """
+    timestamp = models.DateTimeField(auto_now_add=True, verbose_name='Время отправки запроса')
+    path = models.CharField(max_length=255, verbose_name='Путь (URL-объект)')
+    method = models.CharField(max_length=10, verbose_name='HTTP-метод')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Пользователь'
+    )
+    status_code = models.IntegerField(verbose_name="HTTP-статус")
+    processing_time_ms = models.FloatField(verbose_name="Время обработки запроса (мс)")
+
+    request_payload = models.JSONField(null=True, blank=True, verbose_name="Тело запроса")
+    response_payload = models.JSONField(null=True, blank=True, verbose_name="Тело ответа")
+
+    class Meta:
+        db_table = "audit_logs"
+        verbose_name = "Аудит-лог"
+        verbose_name_plural = "Аудит-логи"
+        ordering = ["-timestamp"]
+
+    def __str__(self):
+        return f"[{self.status_code}] {self.method} {self.path} ({self.processing_time_ms:.2f}ms)"
