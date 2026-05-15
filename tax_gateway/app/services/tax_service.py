@@ -11,7 +11,7 @@ from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from tax_gateway.app.adapters.base import TaxAdapterProtocol
+from tax_gateway.app.adapters.base import AbstractTaxAdapter
 from tax_gateway.app.core.exceptions import ExternalAdapterError, ExternalServiceError, BadRequestError
 from tax_gateway.app.repositories.dto.audit_logs import AuditLogs
 from tax_gateway.app.repositories.tax_repository import TaxRepository
@@ -33,7 +33,7 @@ TaxService handles the following logic:
 
 
 class TaxService:
-    __slots__ = ("_tax_repository", "_russia_adapter")
+    __slots__ = ("_tax_repository", "_russia_adapter", "_usa_adapter")
 
     _logger = logging.getLogger(__name__)
 
@@ -42,7 +42,6 @@ class TaxService:
     _usa_adapter: UsaTaxAdapter
 
     def __init__(self, database: AsyncSession, russia_adapter: RussiaTaxAdapter, usa_adapter: UsaTaxAdapter) -> None:
-        self._database = database
         self._tax_repository = TaxRepository(database)
         self._russia_adapter = russia_adapter
         self._usa_adapter = usa_adapter
@@ -50,7 +49,7 @@ class TaxService:
     # Fix needed
     async def send_report(self, tax_report_request: TaxReportRequest) -> SendReportResult:
         self._logger.info("TaxService: called send_report; tax_report_request=" + str(tax_report_request))
-        adapter: TaxAdapterProtocol = self._russia_adapter
+        adapter: AbstractTaxAdapter = self._russia_adapter
 
         country: Optional[str] = tax_report_request.country
         if country is None or country == "":
@@ -86,7 +85,7 @@ class TaxService:
 
     # Fix needed
     async def get_status(self, country: str, report_id: str) -> GetStatusResult:
-        adapter: TaxAdapterProtocol = self._russia_adapter
+        adapter: AbstractTaxAdapter = self._russia_adapter
 
         start_time: float = time.perf_counter()
         try:
@@ -119,7 +118,7 @@ class TaxService:
 
     # Fix needed
     async def validate(self, tax_report_request: TaxReportRequest) -> ValidateResult:
-        adapter: TaxAdapterProtocol = self._russia_adapter
+        adapter: AbstractTaxAdapter = self._russia_adapter
 
         country: Optional[str] = tax_report_request.country
         if country is None or country == "":
