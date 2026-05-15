@@ -44,7 +44,6 @@ class TaxService:
         self._russia_adapter = russia_adapter
         self._usa_adapter = usa_adapter
 
-    # Fix needed
     async def send_report(self, tax_report_request: TaxReportRequest) -> SendReportResult:
         self._logger.info("TaxService: called send_report; tax_report_request=" + str(tax_report_request))
         adapter: AbstractTaxAdapter = self._russia_adapter
@@ -78,7 +77,6 @@ class TaxService:
             self._logger.error(e.message)
             raise ExternalServiceError(e)
 
-    # Fix needed
     async def get_status(self, country: str, report_id: str) -> GetStatusResult:
         adapter: AbstractTaxAdapter = self._russia_adapter
 
@@ -95,6 +93,7 @@ class TaxService:
             response: GetStatusResult = await adapter.get_status(report_id)
             end_time: float = time.perf_counter()
 
+            # Test this
             await self._tax_repository.save_audit_logs(
                 AuditLogs(
                     None,
@@ -109,7 +108,6 @@ class TaxService:
             self._logger.error(e.message)
             raise ExternalServiceError(e)
 
-    # Fix needed
     async def validate(self, tax_report_request: TaxReportRequest) -> ValidateResult:
         adapter: AbstractTaxAdapter = self._russia_adapter
 
