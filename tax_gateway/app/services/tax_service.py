@@ -22,6 +22,7 @@ from tax_gateway.app.services.dto.tax.status import Status
 from tax_gateway.app.services.dto.tax.validate_result import ValidateResult
 
 from tax_gateway.app.adapters.russia_adapter import RussiaTaxAdapter
+from tax_gateway.app.adapters.usa_adapter import UsaTaxAdapter
 
 """
 TaxService handles the following logic:
@@ -38,10 +39,13 @@ class TaxService:
 
     _tax_repository: TaxRepository
     _russia_adapter: RussiaTaxAdapter
+    _usa_adapter: UsaTaxAdapter
 
-    def __init__(self, database: AsyncSession, russia_adapter: RussiaTaxAdapter) -> None:
+    def __init__(self, database: AsyncSession, russia_adapter: RussiaTaxAdapter, usa_adapter: UsaTaxAdapter) -> None:
+        self._database = database
         self._tax_repository = TaxRepository(database)
         self._russia_adapter = russia_adapter
+        self._usa_adapter = usa_adapter
 
     # Fix needed
     async def send_report(self, tax_report_request: TaxReportRequest) -> SendReportResult:
