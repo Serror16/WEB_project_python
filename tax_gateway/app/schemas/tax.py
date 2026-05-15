@@ -6,7 +6,7 @@ from typing import Dict, Any, Optional
 class TaxReportRequest(BaseModel):
     # здесь country опционален на уровне тела,
     # но ниже в роутере должен передаваться в юрл
-    country: Optional[str] = None
+    country: str = None
     idempotency_key: UUID4
     taxpayer_id: str = Field(..., max_length=50)
     amount: Decimal = Field(..., max_digits=12, decimal_places=2)
