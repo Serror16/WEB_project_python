@@ -6,6 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from tax_gateway.app.repositories.dto.audit_logs import AuditLogs
 
+from tax_gateway.app.db.models import AuditLog
+
 
 class TaxRepository:
     __slots__ = ("_database",)
@@ -16,7 +18,17 @@ class TaxRepository:
         self._database = database
 
     async def save_audit_logs(self, send_report_audit_logs: AuditLogs) -> None:
-        self._database.add(send_report_audit_logs)
+        db_log = AuditLog(
+            idempotency_key=str(send_report_audit_logs.idempotency_key) if send_report_audit_logs.idempotency_key else None,
+            user_id=send_report_audit_logs.user_id,
+            country=send_report_audit_logs.country,
+            request_payload=send_report_audit_logs.request_payload,
+            response_payload=send_report_audit_logs.response_payload,
+            status_code=send_report_audit_logs.status_code,
+            request_creation_time=send_report_audit_logs.request_creation_time,
+            request_processing_time=send_report_audit_logs.request_processing_time
+        )
+
+        self._database.add(db_log)
         await self._database.commit()
-        await self._database.refresh(send_report_audit_logs)
 

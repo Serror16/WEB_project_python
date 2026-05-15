@@ -1,8 +1,5 @@
-# SQLAlchemy модели.
-# Здесь описываем таблицы для логирования и аудита: входящие/исходящие данные, время ответа, статус выполнения.
-
 from datetime import datetime
-from sqlalchemy import Boolean, Column, DateTime, String, Integer, BigInteger
+from sqlalchemy import Boolean, Column, DateTime, String, Integer, BigInteger, Float, JSON
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -28,4 +25,18 @@ class BlacklistedToken(Base):
     token = Column(String(500), unique=True, index=True, nullable=False)
     blacklisted_at = Column(DateTime, default=datetime.utcnow)
     expires_at = Column(DateTime, nullable=False)
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    idempotency_key = Column(String(50), nullable=True)
+    user_id = Column(String(50), nullable=True)
+    country = Column(String(10), nullable=False)
+    request_payload = Column(JSON, nullable=True)
+    response_payload = Column(JSON, nullable=False)
+    status_code = Column(Integer, nullable=False)
+    request_creation_time = Column(Float, nullable=False)
+    request_processing_time = Column(Float, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
