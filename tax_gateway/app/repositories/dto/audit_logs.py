@@ -61,16 +61,16 @@ class AuditLogs:
         self._idempotency_key = idempotency_key
 
     @property
-    def user_id(self) -> UUID4:
+    def user_id(self) -> str:
         return self._user_id
 
     @user_id.getter
-    def user_id(self) -> UUID4:
+    def user_id(self) -> str:
         return self._user_id
 
     @user_id.setter
-    def user_id(self, user_id: UUID4) -> None:
-        if not isinstance(user_id, UUID4):
+    def user_id(self, user_id: str) -> None:
+        if not isinstance(user_id, str):
             raise TypeError
 
         self._user_id = user_id
