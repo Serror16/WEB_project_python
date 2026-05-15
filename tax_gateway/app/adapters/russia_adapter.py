@@ -3,7 +3,7 @@ import logging
 import uuid
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
 
-from tax_gateway.app.core.exceptions import ExternalServiceError
+from tax_gateway.app.core.exceptions import ExternalAdapterError
 from tax_gateway.app.schemas.tax import TaxReportRequest
 from tax_gateway.app.services.dto.tax.send_report_result import SendReportResult
 from tax_gateway.app.services.dto.tax.get_status_result import GetStatusResult
@@ -58,13 +58,13 @@ class RussiaTaxAdapter:
                 
             except httpx.HTTPStatusError as e:
                 logger.error(f"API РФ вернуло статус ошибки: {e.response.status_code}")
-                raise ExternalServiceError(
+                raise ExternalAdapterError(
                     message="Налоговая РФ отклонила запрос",
                     details={"status_code": e.response.status_code, "response": e.response.text}
                 )
             except httpx.RequestError as e:
                 logger.error(f"Сетевая ошибка API РФ: {str(e)}")
-                raise ExternalServiceError(
+                raise ExternalAdapterError(
                     message="Налоговая РФ недоступна после серии попыток",
                     details={"error": str(e)}
                 )
@@ -86,13 +86,13 @@ class RussiaTaxAdapter:
             
             except httpx.HTTPStatusError as e:
                 logger.error(f"API РФ вернуло статус ошибки при проверке статуса: {e.response.status_code}")
-                raise ExternalServiceError(
+                raise ExternalAdapterError(
                     message="Налоговая РФ отклонила запрос статуса",
                     details={"status_code": e.response.status_code, "response": e.response.text}
                 )
             except httpx.RequestError as e:
                 logger.error(f"Сетевая ошибка API РФ при проверке статуса: {str(e)}")
-                raise ExternalServiceError(
+                raise ExternalAdapterError(
                     message="Налоговая РФ недоступна при проверке статуса после серии попыток",
                     details={"error": str(e)}
                 )
@@ -124,13 +124,14 @@ class RussiaTaxAdapter:
                 if e.response.status_code == 400:
                     return ValidateResult(is_valid=False)
                 
-                raise ExternalServiceError(
+                raise ExternalAdapterError(
                     message="Налоговая РФ отклонила запрос валидации",
                     details={"status_code": e.response.status_code, "response": e.response.text}
                 )
             except httpx.RequestError as e:
                 logger.error(f"Сетевая ошибка API РФ при валидации: {str(e)}")
-                raise ExternalServiceError(
+                raise ExternalAdapterError(
                     message="Налоговая РФ недоступна при валидации после серии попыток",
                     details={"error": str(e)}
                 )
+

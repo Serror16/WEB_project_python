@@ -18,6 +18,9 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+"""
+It is necessary for JWT token
+"""
 class BlacklistedToken(Base):
     __tablename__ = "blacklisted_tokens"
     
@@ -25,3 +28,4 @@ class BlacklistedToken(Base):
     token = Column(String(500), unique=True, index=True, nullable=False)
     blacklisted_at = Column(DateTime, default=datetime.utcnow)
     expires_at = Column(DateTime, nullable=False)
+
