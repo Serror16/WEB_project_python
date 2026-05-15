@@ -39,13 +39,12 @@ class AuditLogs:
             request_processing_time: float,
             fallback_country: str = "UNKNOWN"
     ):
-        # Если запрос есть (send_report, validate)
+
         if tax_report_request is not None:
             self._idempotency_key = tax_report_request.idempotency_key
             self._user_id = tax_report_request.taxpayer_id
             self._country = tax_report_request.country or fallback_country
             self._request_payload = tax_report_request.payload
-        # Если запроса нет (get_status)
         else:
             self._idempotency_key = None
             self._user_id = None
@@ -53,7 +52,7 @@ class AuditLogs:
             self._request_payload = None
 
         self._response_payload = response_payload
-        self._status_code = 200  # Инициализируем пропущенный статус!
+        self._status_code = response_payload.get("status", 500)
         self._request_creation_time = request_creation_time
         self._request_processing_time = request_processing_time
 
