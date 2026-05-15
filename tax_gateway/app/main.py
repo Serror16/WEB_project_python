@@ -3,8 +3,7 @@ from fastapi.responses import JSONResponse
 
 from tax_gateway.app.utils.logger import setup_logging
 from tax_gateway.app.api.v1.router import router as api_v1_router
-from tax_gateway.app.core.exceptions import TaxGatewayException
-
+from tax_gateway.app.core.exceptions import TaxGatewayException, ExternalServiceError, BadRequestError
 
 setup_logging()
 
@@ -26,5 +25,27 @@ async def custom_tax_exception_handler(request: Request, exc: TaxGatewayExceptio
             "error_code": exc.error_code,
             "message": exc.message,
             "details": exc.details
+        }
+    )
+
+@app.exception_handler(ExternalServiceError)
+async def custom_tax_exception_handler(request: Request, e: ExternalServiceError):
+    return JSONResponse(
+        status_code=e.status_code,
+        content={
+            "error_code": e.error_code,
+            "message": e.message,
+            "details": e.details
+        }
+    )
+
+@app.exception_handler(BadRequestError)
+async def custom_tax_exception_handler(request: Request, e: BadRequestError):
+    return JSONResponse(
+        status_code=e.status_code,
+        content={
+            "error_code": e.status_code,
+            "message": e.message,
+            "time": e.time
         }
     )
