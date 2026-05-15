@@ -45,8 +45,8 @@ class AuthService:
         refresh_token = security_manager.create_refresh_token(data={"email": register_request.email})
 
         return AuthenticationResult(
-            user.id,
-            user.email,
+            str(user.id),
+            register_request.email,
             access_token,
             refresh_token
         )
@@ -79,7 +79,7 @@ class AuthService:
         refresh_new = security_manager.create_refresh_token(data={"email": login_request.email})
 
         return AuthenticationResult(
-            user.id,
+            str(user.id),
             user.email,
             access,
             refresh_new
@@ -104,7 +104,7 @@ class AuthService:
                 }
             )
 
-        email: str = payload.get("email")
+        email: str = str(payload.get("email"))
         if not email:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -129,7 +129,7 @@ class AuthService:
 
             blacklisted = BlacklistedToken(
                 token=logout_request.refresh,
-                expires_at=datetime.fromtimestamp(payload["exp"], tz=timezone.UTC)
+                expires_at=datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
             )
 
             await self._auth_repository.save_token(blacklisted)

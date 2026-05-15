@@ -1,4 +1,5 @@
-﻿import uuid
+﻿import logging
+import uuid
 
 from tax_gateway.app.adapters.base import AbstractTaxAdapter
 from tax_gateway.app.schemas.tax import TaxReportRequest

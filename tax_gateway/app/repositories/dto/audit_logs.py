@@ -22,7 +22,7 @@ class AuditLogs:
     )
 
     _idempotency_key: UUID4
-    _user_id: UUID4
+    _user_id: str
     _country: str
     _request_payload: dict[str, Any]
     _response_payload: dict[str, Any]
@@ -38,9 +38,9 @@ class AuditLogs:
             request_processing_time: float
     ):
         self._idempotency_key = tax_report_request.idempotency_key
-        self._user_id = tax_report_request.user_id
+        self._user_id = tax_report_request.taxpayer_id
         self._country = tax_report_request.country
-        self._request_payload = tax_report_request.request_payload
+        self._request_payload = tax_report_request.payload
         self._response_payload = response_payload
         self._request_creation_time = request_creation_time
         self._request_processing_time = request_processing_time

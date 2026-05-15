@@ -2,7 +2,7 @@
 import logging
 import httpx
 from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type, before_sleep_log
-from tax_gateway.app.core.exceptions import ExternalServiceError
+from tax_gateway.app.core.exceptions import ExternalAdapterError
 from tax_gateway.app.schemas.tax import TaxReportRequest
 from tax_gateway.app.services.dto.tax.send_report_result import SendReportResult
 from tax_gateway.app.services.dto.tax.get_status_result import GetStatusResult
@@ -43,7 +43,7 @@ class AbstractTaxAdapter(abc.ABC):
             else:
                 status_code = "СЕТЬ"
             
-            raise ExternalServiceError(
+            raise ExternalAdapterError(
                 message=f"Ошибка внешней системы. Код: {status_code}",
                 details={"error": str(e), "endpoint": endpoint}
             )
