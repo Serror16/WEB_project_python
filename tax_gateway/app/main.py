@@ -1,9 +1,9 @@
-from fastapi import FastAPI, Request
+﻿from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from app.utils.logger import setup_logging
-from app.api.v1.router import router as api_v1_router
-from app.core.exceptions import TaxGatewayException
+from tax_gateway.app.utils.logger import setup_logging
+from tax_gateway.app.api.v1.router import router as api_v1_router
+from tax_gateway.app.core.exceptions import TaxGatewayException
 
 
 setup_logging()

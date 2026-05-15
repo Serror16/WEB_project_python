@@ -1,16 +1,20 @@
-from fastapi import APIRouter, status
+﻿from fastapi import APIRouter, status, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.schemas.auth import (
+from tax_gateway.app.db.session import get_db
+from tax_gateway.app.schemas.auth import (
     RegisterRequest, RegisterResponse, LoginRequest, LoginResponse,
     RefreshToAccessRequest, RefreshToAccessResponse, LogoutRequest, LogoutResponse
 )
-from app.schemas.errors import ErrorResponse
-from app.services.auth_service import AuthService
-from app.services.dto.auth.authentication_result import AuthenticationResult
+from tax_gateway.app.schemas.errors import ErrorResponse
+from tax_gateway.app.services.auth_service import AuthService
+from tax_gateway.app.services.dto.auth.authentication_result import AuthenticationResult
 
-auth_service = AuthService()
-router = APIRouter(prefix="/auth")
+router = APIRouter(prefix="/auth", tags=["Authentication"])
 
+
+async def get_auth_service(db: AsyncSession = Depends(get_db)) -> AuthService:
+    return AuthService(db)
 
 @router.post(
     path="/register",
@@ -18,11 +22,16 @@ router = APIRouter(prefix="/auth")
     status_code=status.HTTP_201_CREATED,
     responses={400: {"model": ErrorResponse}, 409: {"model": ErrorResponse}}
 )
-async def register(data: RegisterRequest):
-    result: AuthenticationResult = await auth_service.register(data)
+async def register(
+        request_data: RegisterRequest,
+        auth_service: AuthService = Depends(get_auth_service)
+):
+    """Эндпоинт для регистрации нового пользователя: POST /api/v1/auth/register"""
+
+    result: AuthenticationResult = await auth_service.register(request_data)
 
     return RegisterResponse(
-        id=result.id,
+        id=str(result.id),
         email=result.email,
         access_token=result.access_token,
         refresh_token=result.refresh_token,
@@ -35,11 +44,16 @@ async def register(data: RegisterRequest):
     response_model=LoginResponse,
     responses={401: {"model": ErrorResponse}}
 )
-async def login(data: LoginRequest):
-    result: AuthenticationResult = await auth_service.login(data)
+async def login(
+        request_data: LoginRequest,
+        auth_service: AuthService = Depends(get_auth_service)
+):
+    """Эндпоинт для входа в систему: POST /api/v1/auth/login"""
+
+    result: AuthenticationResult = await auth_service.login(request_data)
 
     return LoginResponse(
-        id=result.id,
+        id=str(result.id),
         email=result.email,
         access_token=result.access_token,
         refresh_token=result.refresh_token,
@@ -52,9 +66,13 @@ async def login(data: LoginRequest):
     response_model=RefreshToAccessResponse,
     responses={401: {"model": ErrorResponse}}
 )
-async def refresh(data: RefreshToAccessRequest):
-    # Test needed. Probable vulnerability here
-    token: str = await auth_service.refresh(data)[2]
+async def refresh(
+        request_data: RefreshToAccessRequest,
+        auth_service: AuthService = Depends(get_auth_service)
+):
+    """Эндпоинт для обновления access-токена: POST /api/v1/auth/refresh"""
+
+    token: str = await auth_service.refresh(request_data)
 
     return RefreshToAccessResponse(access=token)
 
@@ -64,7 +82,12 @@ async def refresh(data: RefreshToAccessRequest):
     response_model=LogoutResponse,
     responses={400: {"model": ErrorResponse}}
 )
-async def logout(data: LogoutRequest):
-    await auth_service.logout(data)
+async def logout(
+        request_data: LogoutRequest,
+        auth_service: AuthService = Depends(get_auth_service)
+):
+    """Эндпоинт для выхода из аккаунта (инвалидация refresh-токена): POST /api/v1/auth/logout"""
+
+    await auth_service.logout(request_data)
 
     return LogoutResponse(message="Выход выполнен успешно")

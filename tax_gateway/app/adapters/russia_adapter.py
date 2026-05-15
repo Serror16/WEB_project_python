@@ -1,136 +1,68 @@
-import httpx
-import logging
-import uuid
-from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception_type
+﻿import uuid
 
-from app.core.exceptions import ExternalServiceError
-from app.schemas.tax import TaxReportRequest
-from app.services.dto.tax.send_report_result import SendReportResult
-from app.services.dto.tax.get_status_result import GetStatusResult
-from app.services.dto.tax.validate_result import ValidateResult
-from app.services.dto.tax.status import Status
+from tax_gateway.app.adapters.base import AbstractTaxAdapter
+from tax_gateway.app.schemas.tax import TaxReportRequest
+from tax_gateway.app.services.dto.tax.get_status_result import GetStatusResult
+from tax_gateway.app.services.dto.tax.send_report_result import SendReportResult
+from tax_gateway.app.services.dto.tax.status import Status
+from tax_gateway.app.services.dto.tax.validate_result import ValidateResult
+from tax_gateway.app.utils.xml_parser import dict_to_xml
 
 logger = logging.getLogger(__name__)
 
-class RussiaTaxAdapter:
+class RussiaTaxAdapter(AbstractTaxAdapter):
     """
-    Адаптер для взаимодействия с налоговой системой РФ (Mock-сервис).
-    Реализует TaxAdapterProtocol неявно (duck typing).
+    Адаптер для налоговой системы РФ.
+    Ожидает XML API (согласно мок-серверу на порту 8001).
     """
-    
-    def __init__(self) -> None:
-        # URL должен выноситься в настройки (config.py)
-        self.base_url = "http://localhost:8001/mock-russia" 
-    
-    def _to_xml(self, request: TaxReportRequest) -> str:
-        """Трансформация JSON в XML."""
-        xml = f"""
-        <TaxReport>
-            <IdempotencyKey>{request.idempotency_key}</IdempotencyKey>
-            <TaxpayerId>{request.taxpayer_id}</TaxpayerId>
-            <Amount>{request.amount}</Amount>
-            <Currency>{request.currency}</Currency>
-            <Year>{request.year}</Year>
-        </TaxReport>
-        """
-        return xml.strip()
 
-    @retry(
-        wait=wait_exponential(multiplier=1, min=2, max=10),
-        stop=stop_after_attempt(3),
-        retry=retry_if_exception_type(httpx.RequestError),
-        reraise=True
-    )
-    async def send_report(self, request: TaxReportRequest) -> SendReportResult:
-        """Отправка отчета с логикой повторных попыток при сетевых сбоях."""
-        xml_data = self._to_xml(request)
-        
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            try:
-                response = await client.post(
-                    f"{self.base_url}/submit",
-                    content=xml_data,
-                    headers={"Content-Type": "application/xml"}
-                )
-                response.raise_for_status()
-                
-                return SendReportResult(status=Status.SUCCESS, external_id=uuid.uuid4())
-                
-            except httpx.HTTPStatusError as e:
-                logger.error(f"API РФ вернуло статус ошибки: {e.response.status_code}")
-                raise ExternalServiceError(
-                    message="Налоговая РФ отклонила запрос",
-                    details={"status_code": e.response.status_code, "response": e.response.text}
-                )
-            except httpx.RequestError as e:
-                logger.error(f"Сетевая ошибка API РФ: {str(e)}")
-                raise ExternalServiceError(
-                    message="Налоговая РФ недоступна после серии попыток",
-                    details={"error": str(e)}
-                )
+    def __init__(self):
+        super().__init__(base_url="http://127.0.0.1:8001")
 
-    @retry(
-        wait=wait_exponential(multiplier=1, min=2, max=10),
-        stop=stop_after_attempt(3),
-        retry=retry_if_exception_type(httpx.RequestError),
-        reraise=True
-    )
+    async def send_report(self, request_data: TaxReportRequest) -> SendReportResult:
+        report_dict = {
+            "TaxReport": {
+                "IdempotencyKey": str(request_data.idempotency_key),
+                "TaxpayerId": request_data.taxpayer_id,
+                "Amount": str(request_data.amount),
+                "Currency": request_data.currency,
+                "Year": str(request_data.year)
+            }
+        }
+
+        xml_data = dict_to_xml(report_dict)
+
+        response = await self._make_request(
+            method="POST",
+            endpoint="/mock-russia/submit",
+            content=xml_data,
+            headers={"Content-Type": "application/xml"}
+        )
+
+        if response.status_code == 200:
+            return SendReportResult(Status.SUCCESS, request_data.idempotency_key)
+
+        return SendReportResult(Status.FAILURE, request_data.idempotency_key)
+
     async def get_status(self, report_id: str) -> GetStatusResult:
-        """Проверка статуса отчета во внешней налоговой."""
+        response = await self._make_request(
+            method="GET",
+            endpoint=f"/mock-russia/status/{report_id}"
+        )
 
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            try:
-                response = await client.get(f"{self.base_url}/status/{report_id}")
-                response.raise_for_status()
-                return GetStatusResult(status=Status.SUCCESS, report_id=uuid.UUID(report_id))
-            
-            except httpx.HTTPStatusError as e:
-                logger.error(f"API РФ вернуло статус ошибки при проверке статуса: {e.response.status_code}")
-                raise ExternalServiceError(
-                    message="Налоговая РФ отклонила запрос статуса",
-                    details={"status_code": e.response.status_code, "response": e.response.text}
-                )
-            except httpx.RequestError as e:
-                logger.error(f"Сетевая ошибка API РФ при проверке статуса: {str(e)}")
-                raise ExternalServiceError(
-                    message="Налоговая РФ недоступна при проверке статуса после серии попыток",
-                    details={"error": str(e)}
-                )
+        data = response.json()
 
-    @retry(
-        wait=wait_exponential(multiplier=1, min=2, max=10),
-        stop=stop_after_attempt(3),
-        retry=retry_if_exception_type(httpx.RequestError),
-        reraise=True
-    )
-    async def validate(self, request: TaxReportRequest) -> ValidateResult:
-        """Предварительная валидация данных на стороне внешней системы."""
+        if data.get("status") == "SUCCESS":
+            return GetStatusResult(Status.SUCCESS, uuid.UUID(report_id))
 
-        xml_data = self._to_xml(request)
+        return GetStatusResult(Status.FAILURE, uuid.UUID(report_id))
 
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            try:
-                response = await client.post(
-                    f"{self.base_url}/validate",
-                    content=xml_data,
-                    headers={"Content-Type": "application/xml"}
-                )
-                response.raise_for_status()
-                return ValidateResult(is_valid=True)
-            
-            except httpx.HTTPStatusError as e:
-                logger.error(f"API РФ вернуло статус ошибки при валидации: {e.response.status_code}")
-                
-                if e.response.status_code == 400:
-                    return ValidateResult(is_valid=False)
-                
-                raise ExternalServiceError(
-                    message="Налоговая РФ отклонила запрос валидации",
-                    details={"status_code": e.response.status_code, "response": e.response.text}
-                )
-            except httpx.RequestError as e:
-                logger.error(f"Сетевая ошибка API РФ при валидации: {str(e)}")
-                raise ExternalServiceError(
-                    message="Налоговая РФ недоступна при валидации после серии попыток",
-                    details={"error": str(e)}
-                )
+    async def validate(self, request_data: TaxReportRequest) -> ValidateResult:
+        response = await self._make_request(
+            method="POST",
+            endpoint="/mock-russia/validate",
+            json=request_data.model_dump(mode="json")
+        )
+
+        data = response.json()
+        return ValidateResult(is_valid=data.get("is_valid", False))
