@@ -2,7 +2,8 @@
 """
 Copyright (C) 2026  Andrei Kekishev
 """
-from typing import Any
+from typing import Any, Optional
+import uuid
 
 from pydantic import UUID4
 
@@ -21,10 +22,10 @@ class AuditLogs:
         "_request_processing_time"
     )
 
-    _idempotency_key: UUID4
-    _user_id: str
+    _idempotency_key: Optional[UUID4]
+    _user_id: Optional[str]
     _country: str
-    _request_payload: dict[str, Any]
+    _request_payload: Optional[dict[str, Any]]
     _response_payload: dict[str, Any]
     _status_code: int
     _request_creation_time: float
@@ -32,45 +33,56 @@ class AuditLogs:
 
     def __init__(
             self,
-            tax_report_request: TaxReportRequest,
+            tax_report_request: Optional[TaxReportRequest],
             response_payload: dict[str, Any],
             request_creation_time: float,
-            request_processing_time: float
+            request_processing_time: float,
+            fallback_country: str = "UNKNOWN"
     ):
-        self._idempotency_key = tax_report_request.idempotency_key
-        self._user_id = tax_report_request.taxpayer_id
-        self._country = tax_report_request.country
-        self._request_payload = tax_report_request.payload
+        # Если запрос есть (send_report, validate)
+        if tax_report_request is not None:
+            self._idempotency_key = tax_report_request.idempotency_key
+            self._user_id = tax_report_request.taxpayer_id
+            self._country = tax_report_request.country or fallback_country
+            self._request_payload = tax_report_request.payload
+        # Если запроса нет (get_status)
+        else:
+            self._idempotency_key = None
+            self._user_id = None
+            self._country = fallback_country
+            self._request_payload = None
+
         self._response_payload = response_payload
+        self._status_code = 200  # Инициализируем пропущенный статус!
         self._request_creation_time = request_creation_time
         self._request_processing_time = request_processing_time
 
     @property
-    def idempotency_key(self) -> UUID4:
+    def idempotency_key(self) -> Optional[UUID4]:
         return self._idempotency_key
 
     @idempotency_key.getter
-    def idempotency_key(self) -> UUID4:
+    def idempotency_key(self) -> Optional[UUID4]:
         return self._idempotency_key
 
     @idempotency_key.setter
-    def idempotency_key(self, idempotency_key: UUID4) -> None:
-        if not isinstance(idempotency_key, UUID4):
+    def idempotency_key(self, idempotency_key: Optional[UUID4]) -> None:
+        if idempotency_key is not None and not isinstance(idempotency_key, uuid.UUID):
             raise TypeError
 
         self._idempotency_key = idempotency_key
 
     @property
-    def user_id(self) -> str:
+    def user_id(self) -> Optional[str]:
         return self._user_id
 
     @user_id.getter
-    def user_id(self) -> str:
+    def user_id(self) -> Optional[str]:
         return self._user_id
 
     @user_id.setter
-    def user_id(self, user_id: str) -> None:
-        if not isinstance(user_id, str):
+    def user_id(self, user_id: Optional[str]) -> None:
+        if user_id is not None and not isinstance(user_id, str):
             raise TypeError
 
         self._user_id = user_id
@@ -91,16 +103,16 @@ class AuditLogs:
         self._country = country
 
     @property
-    def request_payload(self) -> dict[str, Any]:
+    def request_payload(self) -> Optional[dict[str, Any]]:
         return self._request_payload
 
     @request_payload.getter
-    def request_payload(self) -> dict[str, Any]:
+    def request_payload(self) -> Optional[dict[str, Any]]:
         return self._request_payload
 
     @request_payload.setter
-    def request_payload(self, request_payload: dict[str, Any]) -> None:
-        if not isinstance(request_payload, dict):
+    def request_payload(self, request_payload: Optional[dict[str, Any]]) -> None:
+        if request_payload is not None and not isinstance(request_payload, dict):
             raise TypeError
 
         self._request_payload = request_payload
@@ -164,4 +176,3 @@ class AuditLogs:
             raise TypeError
 
         self._request_processing_time = request_processing_time
-
