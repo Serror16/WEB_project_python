@@ -6,7 +6,6 @@ This file contains the TaxService, which is the main orchestrator of the system.
 """
 import logging
 import time
-import uuid
 from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,7 +17,6 @@ from tax_gateway.app.repositories.tax_repository import TaxRepository
 from tax_gateway.app.schemas.tax import TaxReportRequest
 from tax_gateway.app.services.dto.tax.get_status_result import GetStatusResult
 from tax_gateway.app.services.dto.tax.send_report_result import SendReportResult
-from tax_gateway.app.services.dto.tax.status import Status
 from tax_gateway.app.services.dto.tax.validate_result import ValidateResult
 
 from tax_gateway.app.adapters.russia_adapter import RussiaTaxAdapter
@@ -52,14 +50,11 @@ class TaxService:
         adapter: AbstractTaxAdapter = self._russia_adapter
 
         country: Optional[str] = tax_report_request.country
-        if country is None or country == "":
-            # result = defaultAdapter.send_report(tax_report_request)
-            return SendReportResult(Status.SUCCESS, uuid.uuid4())
 
         try:
             match country:
                 case "US":
-                    adapter = 'us' # fix
+                    adapter = self._usa_adapter
                 case "RU":
                     adapter = self._russia_adapter
                 case _:
@@ -87,12 +82,10 @@ class TaxService:
     async def get_status(self, country: str, report_id: str) -> GetStatusResult:
         adapter: AbstractTaxAdapter = self._russia_adapter
 
-        start_time: float = time.perf_counter()
         try:
             match country:
                 case "US":
-                    adapter = 'us'
-                    # result = usaAdapter.send_report(tax_report_request)
+                    adapter = self._usa_adapter
                 case "RU":
                     adapter = self._russia_adapter
                 case _:
@@ -121,16 +114,11 @@ class TaxService:
         adapter: AbstractTaxAdapter = self._russia_adapter
 
         country: Optional[str] = tax_report_request.country
-        if country is None or country == "":
-            # result = defaultAdapter.send_report(tax_report_request)
-            return ValidateResult(True)
 
         try:
             match country:
                 case "US":
-                    # adapter = 'us'
-                    # result = usaAdapter.send_report(tax_report_request)
-                    return ValidateResult(True)
+                    adapter = self._usa_adapter
                 case "RU":
                     adapter = self._russia_adapter
                 case _:
