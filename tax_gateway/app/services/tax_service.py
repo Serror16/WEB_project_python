@@ -66,7 +66,10 @@ class TaxService:
             await self._tax_repository.save_audit_logs(
                 AuditLogs(
                     tax_report_request,
-                    {"external_id": response.external_id, "status": response.status},
+                    {
+                        "external_id": str(response.external_id), 
+                        "status": response.status.value if hasattr(response.status, 'value') else str(response.status)
+                    },
                     start_time,
                     end_time - start_time
                 )
@@ -93,13 +96,17 @@ class TaxService:
             response: GetStatusResult = await adapter.get_status(report_id)
             end_time: float = time.perf_counter()
 
-            # Test this
             await self._tax_repository.save_audit_logs(
                 AuditLogs(
                     None,
-                    {"country": country, "report_id": response.report_id, "status": response.status},
+                    {
+                        "country": country, 
+                        "report_id": str(response.report_id), 
+                        "status": response.status.value if hasattr(response.status, 'value') else str(response.status)
+                    },
                     start_time,
-                    end_time - start_time
+                    end_time - start_time,
+                    fallback_country=country
                 )
             )
 

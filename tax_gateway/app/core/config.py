@@ -3,7 +3,7 @@ from pydantic import Field
 
 class Settings(BaseSettings):
     DATABASE_URL: str = Field(
-        default="postgresql+asyncpg://postgres:postgres@localhost:5432/postgres",
+        default="postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/postgres",
         validation_alias="DATABASE_URL"
     )
 
