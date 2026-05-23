@@ -1,59 +1,35 @@
-﻿from typing import Optional
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from typing import Optional
 
+from flask import request
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from tax_gateway.app.core.exceptions import UnauthorizedException
 from tax_gateway.app.core.security import security_manager
-from tax_gateway.app.db.session import get_db
 from tax_gateway.app.db.models import User
 
-security = HTTPBearer(auto_error=False)
 
-async def get_current_user(
-        credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
-        db: AsyncSession = Depends(get_db)
-) -> User | None:
-    """
-    Получение текущего пользователя (без обязательной авторизации)
-    """
-
-    if not credentials:
+def get_current_user(db: Session) -> Optional[User]:
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
         return None
-    
-    token = credentials.credentials
+
+    token = auth_header.split(" ", 1)[1]
     payload = security_manager.decode_token(token)
 
-    if payload.get("type") != "access":
+    if payload.get("type") != "access" or not payload.get("email"):
         return None
-    
-    if not payload.get("email"):
-        return None
-    
-    result = await db.execute(select(User).where(User.email == payload.get("email")))
-    user = result.scalar_one_or_none()
+
+    user = db.execute(select(User).where(User.email == payload["email"])).scalar_one_or_none()
 
     if not user or not user.is_active:
         return None
-    
+
     return user
 
-async def get_current_user_required(
-        user: User | None = Depends(get_current_user)
-) -> User:
-    """
-    Получение текущего пользователя (с обязательной авторизацией)
-    """
 
+def get_current_user_required(db: Session) -> User:
+    user = get_current_user(db)
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                "error_code": "UNAUTHORIZED",
-                "message": "Требуется авторизация",
-                "details": {}
-            }
-        )
-    
+        raise UnauthorizedException("UNAUTHORIZED", "Требуется авторизация")
     return user
-

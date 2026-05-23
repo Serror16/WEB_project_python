@@ -1,12 +1,17 @@
-﻿# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: MIT
 """
 Copyright (C) 2026  Andrei Kekishev
 """
 from datetime import datetime, timezone
 
-from fastapi import HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
+from tax_gateway.app.core.exceptions import (
+    TaxGatewayException,
+    UnauthorizedException,
+    ForbiddenException,
+    ConflictException,
+)
 from tax_gateway.app.core.security import security_manager
 from tax_gateway.app.db.models import User, BlacklistedToken
 from tax_gateway.app.repositories.auth_repository import AuthRepository
@@ -19,129 +24,67 @@ class AuthService:
 
     _auth_repository: AuthRepository
 
-    def __init__(self, database: AsyncSession) -> None:
+    def __init__(self, database: Session) -> None:
         self._auth_repository = AuthRepository(database)
 
-    async def register(self, register_request: RegisterRequest) -> AuthenticationResult:
-        result = await self._auth_repository.find_user_by_email(register_request.email)
-        if result.scalar_one_or_none():
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail={
-                    "error_code": "EMAIL_EXISTS",
-                    "message": "Email уже зарегистрирован",
-                    "details": {}
-                }
-            )
+    def register(self, register_request: RegisterRequest) -> AuthenticationResult:
+        if self._auth_repository.find_user_by_email(register_request.email):
+            raise ConflictException("EMAIL_EXISTS", "Email уже зарегистрирован")
 
-        user: User = User(
+        user = User(
             email=register_request.email,
-            hashed_password=security_manager.get_hash_password(register_request.password)
+            hashed_password=security_manager.get_hash_password(register_request.password),
         )
-
-        await self._auth_repository.save_user(user)
+        self._auth_repository.save_user(user)
 
         access_token = security_manager.create_access_token(data={"email": register_request.email})
         refresh_token = security_manager.create_refresh_token(data={"email": register_request.email})
 
-        return AuthenticationResult(
-            str(user.id),
-            register_request.email,
-            access_token,
-            refresh_token
-        )
+        return AuthenticationResult(str(user.id), register_request.email, access_token, refresh_token)
 
-    async def login(self, login_request: LoginRequest) -> AuthenticationResult:
-        result = await self._auth_repository.find_user_by_email(login_request.email)
-        user = result.scalar_one_or_none()
+    def login(self, login_request: LoginRequest) -> AuthenticationResult:
+        user = self._auth_repository.find_user_by_email(login_request.email)
 
         if not user or not security_manager.check_password(login_request.password, user.hashed_password):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail={
-                    "error_code": "INVALID_CREDENTIALS",
-                    "message": "Неверный email или пароль",
-                    "details": {}
-                }
-            )
+            raise UnauthorizedException("INVALID_CREDENTIALS", "Неверный email или пароль")
 
         if not user.is_active:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail={
-                    "error_code": "USER_INACTIVE",
-                    "message": "Аккаунт деактивирован",
-                    "details": {}
-                }
-            )
+            raise ForbiddenException("USER_INACTIVE", "Аккаунт деактивирован")
 
         access = security_manager.create_access_token(data={"email": login_request.email})
         refresh_new = security_manager.create_refresh_token(data={"email": login_request.email})
 
-        return AuthenticationResult(
-            str(user.id),
-            user.email,
-            access,
-            refresh_new
-        )
+        return AuthenticationResult(str(user.id), user.email, access, refresh_new)
 
-    async def refresh(self, refresh_to_access_request: RefreshToAccessRequest) -> str:
+    def refresh(self, refresh_to_access_request: RefreshToAccessRequest) -> str:
         payload = security_manager.decode_token(refresh_to_access_request.refresh)
+
         if payload.get("type") != "refresh":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail={"error_code": "INVALID_TOKEN", "message": "Неверный тип токена", "details": {}}
-            )
+            raise UnauthorizedException("INVALID_TOKEN", "Неверный тип токена")
 
-        result = await self._auth_repository.find_token_by_refresh_token(refresh_to_access_request.refresh)
-        if result.scalar_one_or_none():
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail={
-                    "error_code": "TOKEN_BLACKLISTED",
-                    "message": "Токен уже использован",
-                    "details": {}
-                }
-            )
+        if self._auth_repository.find_token_by_refresh_token(refresh_to_access_request.refresh):
+            raise UnauthorizedException("TOKEN_BLACKLISTED", "Токен уже использован")
 
-        email: str = str(payload.get("email"))
+        email = payload.get("email")
         if not email:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail={"error_code": "INVALID_TOKEN", "message": "Неверный токен", "details": {}}
-            )
+            raise UnauthorizedException("INVALID_TOKEN", "Неверный токен")
 
         return security_manager.create_access_token(data={"email": email})
 
-    async def logout(self, logout_request: LogoutRequest) -> None:
+    def logout(self, logout_request: LogoutRequest) -> None:
         try:
             payload = security_manager.decode_token(logout_request.refresh)
 
             if payload.get("type") != "refresh":
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail={
-                        "error_code": "INVALID_TOKEN",
-                        "message": "Неверный тип токена",
-                        "details": {}
-                    }
-                )
+                raise TaxGatewayException("INVALID_TOKEN", "Неверный тип токена", status_code=400)
 
             blacklisted = BlacklistedToken(
                 token=logout_request.refresh,
-                expires_at=datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
+                expires_at=datetime.fromtimestamp(payload["exp"], tz=timezone.utc),
             )
+            self._auth_repository.save_token(blacklisted)
 
-            await self._auth_repository.save_token(blacklisted)
-
-        except HTTPException:
+        except TaxGatewayException:
             raise
         except Exception:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail={
-                    "error_code": "INVALID_TOKEN",
-                    "message": "Неверный refresh токен",
-                    "details": {}
-                }
-            )
+            raise TaxGatewayException("INVALID_TOKEN", "Неверный refresh токен", status_code=400)
