@@ -1,32 +1,26 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
+import os
+from dotenv import load_dotenv
 
-class Settings(BaseSettings):
-    DATABASE_URL: str = Field(
-        default="postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/postgres",
-        validation_alias="DATABASE_URL"
+load_dotenv()
+
+class Config:
+    """Базовые конфигурации Flask-приложения"""
+
+    # настройки бдшки
+    raw_db_url = os.getenv(
+        "DATABASE_URL",
+        "postgresql://postgres:postgres@127.0.0.1:5432/postgres"
     )
 
-    JWT_KEY: str = Field(
-        default="test-key-azaza", 
-        validation_alias="JWT_KEY"
-    )
-    ALGORITHM: str = Field(
-        default="HS256",
-        validation_alias="JWT_ALGORITHM"
-    )
-    
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
-    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    # замена +asyncpg из старого .env
+    SQLALCHEMY_DATABASE_URI = raw_db_url.replace("+asyncpg", "")
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    API_VERSION: str = "v1"
-    REQUEST_TIMEOUT: int = 30
+    # настройки JWT
+    SECRET_KEY = os.getenv("JWT_KEY", "test-key-azaza")  # [cite: 9]
+    JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")  # [cite: 9]
+    ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 15))  # [cite: 9]
+    REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", 7))  # [cite: 9]
 
-    model_config = SettingsConfigDict(
-        env_file=".env", 
-        env_file_encoding="utf-8",
-        extra="ignore",
-        case_sensitive=True
-    )
-    
-settings = Settings()
+    API_VERSION = os.getenv("API_VERSION", "v1")  # [cite: 9]
+    REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", 30))  # [cite: 9]
