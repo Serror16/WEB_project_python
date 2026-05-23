@@ -6,7 +6,6 @@ from tax_gateway.app.api.v1.dependencies import token_required
 from tax_gateway.app.services.auth_service import AuthService
 from tax_gateway.app.schemas.auth import RegisterRequestSchema, RegisterResponseSchema, RegisterRequest
 
-# Импорты схем Marshmallow (валидация JSON) и DTO (передача в сервис)
 from tax_gateway.app.schemas.auth import (
     LoginRequestSchema, 
     LogoutRequestSchema, 

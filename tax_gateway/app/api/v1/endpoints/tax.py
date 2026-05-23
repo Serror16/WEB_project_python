@@ -84,14 +84,12 @@ def submit_report(current_user):
     json_data = request.get_json()
     if not json_data:
         return jsonify({"error_code": "INVALID_JSON", "message": "Тело запроса должно быть валидным JSON", "details": {}}), 400
-    
-    # 1. Валидация
+
     try:
         validated_data = cast(dict, TaxReportRequestSchema().load(json_data))
     except ValidationError as err:
         return jsonify({"error_code": "VALIDATION_ERROR", "message": "Ошибка валидации", "details": err.messages}), 422
-    
-    # 2. Подготовка DTO
+
     report_dto = TaxReportRequest(
         taxpayer_id=validated_data["taxpayer_id"],
         amount=validated_data["amount"],
@@ -101,14 +99,12 @@ def submit_report(current_user):
         country=country,
         user_id=str(current_user.id)
     )
-    
-    # 3. Внедрение зависимостей (Dependency Injection) для сервиса
+
     db = get_db()
     russia_adapter = RussiaTaxAdapter(base_url=Config.RUSSIA_API_URL) 
     usa_adapter = UsaTaxAdapter(base_url=Config.USA_API_URL)
     service = TaxService(db, russia_adapter, usa_adapter)
-    
-    # 4. Вызов бизнес-логики (замените send_report на то имя метода, которое вы задали в сервисе)
+
     result = service.send_report(report_dto)
     
     return jsonify(TaxReportResponseSchema().dump({
@@ -153,14 +149,12 @@ def check_status(current_user, report_id):
     """
 
     country = request.args.get('country', 'russia')
-    
-    # Собираем сервис со всеми зависимостями
+
     db = get_db()
     russia_adapter = RussiaTaxAdapter(base_url=Config.RUSSIA_API_URL)
     usa_adapter = UsaTaxAdapter(base_url=Config.USA_API_URL)
     service = TaxService(db, russia_adapter, usa_adapter)
-    
-    # Вызов логики (замените get_status на то имя метода, которое у вас в сервисе)
+
     result = service.get_status(
         country=country,
         report_id=report_id
