@@ -39,3 +39,18 @@ class BadRequestError(TaxGatewayException):
         )
         self.time = time
 
+
+class UnauthorizedException(TaxGatewayException):
+    def __init__(self, error_code: str, message: str):
+        super().__init__(error_code=error_code, message=message, status_code=401)
+
+
+class ForbiddenException(TaxGatewayException):
+    def __init__(self, error_code: str, message: str):
+        super().__init__(error_code=error_code, message=message, status_code=403)
+
+
+class ConflictException(TaxGatewayException):
+    def __init__(self, error_code: str, message: str):
+        super().__init__(error_code=error_code, message=message, status_code=409)
+

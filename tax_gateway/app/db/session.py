@@ -1,23 +1,24 @@
-﻿from typing import AsyncGenerator
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from typing import Optional
+from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import sessionmaker, scoped_session, Session
 
-from tax_gateway.app.core.config import settings
+_engine: Optional[Engine] = None
+_db_session: Optional[scoped_session] = None
 
-engine = create_async_engine(
-    settings.DATABASE_URL, 
-    echo=True,
-    pool_pre_ping=True 
-)
 
-AsyncSessionLocal = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+def init_db(database_url: str) -> scoped_session:
+    global _engine, _db_session
+    _engine = create_engine(database_url, echo=True, pool_pre_ping=True)
+    _db_session = scoped_session(sessionmaker(bind=_engine, expire_on_commit=False))
+    return _db_session
 
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    async with AsyncSessionLocal() as session:
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
-        finally:
-            await session.close()
+
+def get_db() -> Session:
+    session = _db_session
+    assert session is not None, "DB not initialized — call init_db() first"
+    return session()
+
+
+def get_engine():
+    return _engine

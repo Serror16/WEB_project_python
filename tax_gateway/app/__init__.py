@@ -1,23 +1,37 @@
 from flask import Flask, jsonify
 from flasgger import Swagger
 from werkzeug.exceptions import HTTPException
+
 from tax_gateway.app.core.config import Config
+from tax_gateway.app.core.exceptions import TaxGatewayException
+
 
 def create_app():
     app = Flask(__name__)
-
-    # применение конфига к приложению
     app.config.from_object(Config)
 
-    # настройка Swagger
     app.config['SWAGGER'] = {
         'title': 'Unified Tax API Gateway',
         'uiversion': 3,
         'openapi': '3.0.0'
     }
-    swagger = Swagger(app)
+    Swagger(app)
 
-    # глобальные обработчики ошибок
+    from tax_gateway.app.db.session import init_db
+    db = init_db(app.config['SQLALCHEMY_DATABASE_URI'])
+
+    @app.teardown_appcontext
+    def shutdown_session(exception=None):
+        db.remove()
+
+    @app.errorhandler(TaxGatewayException)
+    def handle_tax_gateway_exception(e: TaxGatewayException):
+        return jsonify({
+            "error_code": e.error_code,
+            "message": e.message,
+            "details": e.details,
+        }), e.status_code
+
     @app.errorhandler(400)
     def bad_request(e):
         return jsonify({
@@ -42,7 +56,6 @@ def create_app():
             "details": {}
         }), 500
 
-    # перехват необработанных исключений
     @app.errorhandler(Exception)
     def handle_exception(e):
         if isinstance(e, HTTPException):
@@ -56,7 +69,6 @@ def create_app():
     from tax_gateway.app.api.v1.endpoints.tax import tax_bp
     from tax_gateway.app.api.v1.endpoints.auth import auth_bp
 
-    # маршрутизация для апишек
     app.register_blueprint(tax_bp, url_prefix='/api/v1/tax')
     app.register_blueprint(auth_bp, url_prefix='/api/v1/auth')
 
