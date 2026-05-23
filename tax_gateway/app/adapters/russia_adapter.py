@@ -15,6 +15,9 @@ class RussiaTaxAdapter(AbstractTaxAdapter):
     def send_report(self, request_data: TaxReportRequest) -> SendReportResult:
         # Для Pydantic v2
         payload = asdict(request_data)
+
+        payload['amount'] = float(payload['amount'])
+        payload['idempotency_key'] = str(payload['idempotency_key'])
         
         # Просто вызываем наш умный метод _make_request!
         response = self._make_request("POST", "fns/v1/report", json=payload, timeout=10)

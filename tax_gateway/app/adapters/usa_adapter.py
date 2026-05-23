@@ -20,6 +20,9 @@ class UsaTaxAdapter(AbstractTaxAdapter):
     def send_report(self, request_data: TaxReportRequest) -> SendReportResult:
         # Конвертируем Pydantic-модель в словарь (для Pydantic v2)
         payload = asdict(request_data)
+
+        payload['amount'] = float(payload['amount'])
+        payload['idempotency_key'] = str(payload['idempotency_key'])
         
         # Вызываем умный метод из базового класса для отправки отчета в IRS
         response = self._make_request("POST", "irs/v1/report", json=payload, timeout=15)
