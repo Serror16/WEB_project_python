@@ -24,3 +24,4 @@ class Config:
 
     API_VERSION = os.getenv("API_VERSION", "v1")  # [cite: 9]
     REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", 30))  # [cite: 9]
+settings = Config()

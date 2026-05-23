@@ -1,46 +1,27 @@
-from pydantic import BaseModel, Field, UUID4, model_validator
-from decimal import Decimal
-from typing import Dict, Any
+from marshmallow import Schema, fields, validate
 
 
-class TaxReportRequest(BaseModel):
-    # здесь country опционален на уровне тела,
-    # но ниже в роутере должен передаваться в юрл
-    country: str = Field(..., min_length=2, max_length=30)
-    idempotency_key: UUID4
-    taxpayer_id: str = Field(..., max_length=50)
-    amount: Decimal = Field(..., max_digits=12, decimal_places=2)
-    currency: str = Field(..., min_length=3, max_length=3)
-    year: int = Field(..., ge=2000, le=2100)
-
-    # тут будут лежать все остальные поля
-    payload: Dict[str, Any] = Field(default_factory=dict)
-
-    @model_validator(mode='before')
-    @classmethod
-    def pack_extra_fields_to_payload(cls, data: Any) -> Any:
-        # скип, если данные не в виде словаря
-        if not isinstance(data, dict):
-            return data
-
-        known_fields = {'country', 'idempotency_key', 'taxpayer_id', 'amount', 'currency', 'year', 'payload'}
-
-        # разделение на важные и нет поля
-        clean_data = {k: v for k, v in data.items() if k in known_fields}
-        extra_data = {k: v for k, v in data.items() if k not in known_fields}
-
-        # обработка payload
-        existing_payload = data.get('payload', {})
-        if isinstance(existing_payload, dict):
-            clean_data['payload'] = {**existing_payload, **extra_data}
-        else:
-            clean_data['payload'] = extra_data
-
-        return clean_data
+class TaxReportRequestSchema(Schema):
+    idempotency_key = fields.Str(required=True, validate=validate.Regexp(
+        r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+        error="Неверный формат UUID"
+    ))
+    taxpayer_id = fields.Str(required=True, validate=validate.Length(max=50))
+    amount = fields.Decimal(required=True, places=2, validate=validate.Range(min=0.01))
+    currency = fields.Str(required=True, validate=validate.Length(min=3, max=3))
+    year = fields.Int(required=True, validate=validate.Range(min=2000, max=2100))
+    # Остальные поля - через payload
+    payload = fields.Dict(required=False, missing={})
 
 
 # модель для ответа
-class TaxReportResponse(BaseModel):
-    status: str
-    report_id: str
-    adapter_details: Dict[str, Any] = {}
+class TaxReportResponseSchema(Schema):
+    status = fields.Str(required=True)
+    report_id = fields.Str(required=True)
+    adapter_details = fields.Dict(required=False, missing={})
+
+class TaxStatusResponseSchema(Schema):
+    report_id = fields.Str(required=True)
+    status = fields.Str(required=True)
+    message = fields.Str(required=False, allow_none=True)
+    processed_at = fields.DateTime(required=False, allow_none=True)

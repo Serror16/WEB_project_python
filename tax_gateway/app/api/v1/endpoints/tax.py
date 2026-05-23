@@ -1,93 +1,131 @@
 ﻿from flask import Blueprint, request, jsonify
+from marshmallow import ValidationError
 
-tax_bp = Blueprint('tax', __name__)
+from app.api.v1.dependencies import token_required
+from app.services.tax_service import TaxService
+from app.schemas.tax import TaxReportRequestSchema, TaxReportResponseSchema, TaxStatusResponseSchema
+
+tax_bp = Blueprint('tax', __name__, url_prefix='/tax')
+
 
 @tax_bp.route('/report', methods=['POST'])
-def submit_report():
+@token_required
+def submit_report(current_user):
     """
     Эндпоинт для подачи налогового отчета
     ---
     tags:
-      - Tax Reports
+        - Tax Reports
     parameters:
-      - in: query
-        name: country
-        schema:
-          type: string
-        required: true
-        description: Юрисдикция (страна, например: russia)
-      - in: body
-        name: body
-        schema:
-          type: object
-          required:
-            - taxpayer_id
-            - amount
-            - currency
-            - year
-            - idempotency_key
-          properties:
-            idempotency_key:
-              type: string
-              format: uuid
-            taxpayer_id:
-              type: string
-            amount:
-              type: number
-            currency:
-              type: string
-            year:
-              type: integer
-    responses:
-      201:
-        description: Отчет успешно принят
-        content:
-          application/json:
+        - in: query
+            name: country
             schema:
-              type: object
-              properties:
-                status:
-                  type: string
-                  example: accepted
-                report_id:
-                  type: string
-                  example: 123e4567-e89b-12d3-a456-426614174000
-      400:
-        description: Ошибка валидации
-      502:
-        description: Ошибка внешнего сервиса
+                type: string
+            required: true
+            description: Юрисдикция (страна, например: russia)
     """
-    # тут должна быть бизнес-логика (потом отредачить!!!)
-    # return jsonify({
-    #     "status": "accepted",
-    #     "report_id": "1234",
-    #     "adapter_details": {}
-    # }), 201
+    # Получение country из query параметра
+    country = request.args.get('country')
+    
+    if not country:
+        return jsonify({
+            "error_code": "MISSING_COUNTRY",
+            "message": "Параметр country обязателен",
+            "details": {}
+        }), 400
+    
+    # Получение JSON тела
+    json_data = request.get_json()
+    
+    if not json_data:
+        return jsonify({
+            "error_code": "INVALID_JSON",
+            "message": "Тело запроса должно быть валидным JSON",
+            "details": {}
+        }), 400
+    
+    # Валидация
+    schema = TaxReportRequestSchema()
+    try:
+        validated_data = schema.load(json_data)
+    except ValidationError as err:
+        return jsonify({
+            "error_code": "VALIDATION_ERROR",
+            "message": "Ошибка валидации данных",
+            "details": err.messages
+        }), 422
+    
+    # Подготовка данных
+    report_data = {
+        "country": country,
+        "idempotency_key": str(validated_data["idempotency_key"]),
+        "taxpayer_id": validated_data["taxpayer_id"],
+        "amount": str(validated_data["amount"]),  # Decimal в строку
+        "currency": validated_data["currency"],
+        "year": validated_data["year"],
+        "payload": validated_data.get("payload", {})
+    }
+    
+    # Вызов сервиса
+    service = TaxService()
+    result = service.create_report(
+        user_id=current_user.id,
+        country=country,
+        report_data=report_data,
+        idempotency_key=report_data["idempotency_key"]
+    )
+    
+    response_schema = TaxReportResponseSchema()
+    return jsonify(response_schema.dump({
+        "status": result.get("status", "accepted"),
+        "report_id": result.get("report_id"),
+        "adapter_details": result.get("adapter_details", {})
+    })), 201
+
 
 @tax_bp.route('/status/<string:report_id>', methods=['GET'])
-def check_status(report_id):
+@token_required
+def check_status(current_user, report_id):
     """
     Проверка статуса отчета
     ---
     tags:
-      - Tax Reports
+        - Tax Reports
     parameters:
-      - in: path
-        name: report_id
-        required: true
-        schema:
-          type: string
-        description: ID отчета
-      - in: query
-        name: country
-        required: false
-        schema:
-          type: string
-          default: russia
-        description: Юрисдикция
-    responses:
-      200:
-        description: Статус отчета
+        - in: path
+            name: report_id
+            required: true
+            schema:
+                type: string
+            description: ID отчета
+        - in: query
+            name: country
+            required: false
+            schema:
+                type: string
+                default: russia
+            description: Юрисдикция
     """
-    # тут должна быть бизнес-логика (потом отредачить!!!)
-    # return jsonify({"status": "processing", "report_id": report_id}), 200
+    country = request.args.get('country', 'russia')
+    
+    service = TaxService()
+    result = service.get_report_status(
+        user_id=current_user.id,
+        report_id=report_id,
+        country=country
+    )
+    
+    if not result:
+        return jsonify({
+            "error_code": "NOT_FOUND",
+            "message": f"Отчет {report_id} не найден",
+            "details": {}
+        }), 404
+    
+    response_schema = TaxStatusResponseSchema()
+    return jsonify(response_schema.dump({
+        "report_id": result.get("report_id"),
+        "status": result.get("status"),
+        "message": result.get("message"),
+        "processed_at": result.get("processed_at")
+    })), 200

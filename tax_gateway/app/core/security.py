@@ -1,94 +1,56 @@
 from datetime import datetime, timedelta, timezone
-from jose import JWTError, jwt                  #type: ignore
+from typing import Dict, Any
+import jwt
 from passlib.context import CryptContext
-from fastapi import HTTPException, status
-from typing import Any
 
 from .config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-class SecurityManager:
 
-    @staticmethod
-    def check_password(password: str, hash_password: str) -> bool:
-        """
-        Проверка пароля
-        :param password: Строка - пароль
-        :param hash_password: Строка - хешированный пароль
-        :return: Совпадает или нет
-        """
-        return pwd_context.verify(password, hash_password)
-    
-    @staticmethod
-    def get_hash_password(password: str) -> str:
-        """
-        Хеширование пароля
-        :param password: Строка - пароль
-        :return: Строка - захешированный пароль
-        """
-        return pwd_context.hash(password)
-    
-    @staticmethod
-    def create_access_token(data: dict[str, Any]) -> str:
-        """
-        Создание access токена
-        :param data: Словарь - данные пользователя
-        :return: Строка - access токен
-        """
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """
+    Проверка пароля
+    """
+    return pwd_context.verify(plain_password, hashed_password)
 
-        data_copy = data.copy()
-        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        data_copy.update({"exp": expire, "type": "access"})
-        return jwt.encode(data_copy, settings.JWT_KEY, algorithm=settings.ALGORITHM)
-    
-    @staticmethod
-    def create_refresh_token(data: dict[str, Any]) -> str:
-        """
-        Создание refresh токена
-        :param data: Словарь - данные пользователя
-        :return: Строка - refresh токен
-        """
 
-        data_copy = data.copy()
-        expire = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-        data_copy.update({"exp": expire, "type": "refresh"})
-        return jwt.encode(data_copy, settings.JWT_KEY, algorithm=settings.ALGORITHM)
-    
-    @staticmethod
-    def decode_token(token: str) -> dict[str, Any]:
-        """
-        Декодирование токена
-        :param token: Строка - токен
-        :return: Словарь - данные пользователя
-        """
+def get_password_hash(password: str) -> str:
+    """
+    Хеширование пароля
+    """
+    return pwd_context.hash(password)
 
-        try:
-            return jwt.decode(token, settings.JWT_KEY, algorithms=[settings.ALGORITHM])
-        except JWTError as e:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail={
-                    "error_code": "INVALID_TOKEN",
-                    "message": "Неверный/истёкший токен",
-                    "details": {
-                        "error": str(e)
-                    }
-                }
-            )
-        
-    @staticmethod
-    def get_email_from_token(token: str) -> str | None:
-        """
-        Извлечение email из токена
-        :param token: Строка - токен
-        :return: Строка - email
-        """
-        
-        try:
-            data = jwt.decode(token, settings.JWT_KEY, algorithms=[settings.ALGORITHM])
-            return data.get("email")
-        except JWTError:
-            return None
 
-security_manager = SecurityManager()
+def create_access_token(email: str) -> str:
+    """
+    Создание access токена
+    """
+    payload = {
+        "sub": email,
+        "type": "access",
+        "exp": datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    }
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+
+
+def create_refresh_token(email: str) -> str:
+    """
+    Создание refresh токена
+    """
+    payload = {
+        "sub": email,
+        "type": "refresh",
+        "exp": datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    }
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
+
+
+def decode_token(token: str) -> Dict[str, Any]:
+    """
+    Декодирование JWT токена
+    """
+    try:
+        return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+    except jwt.InvalidTokenError as e:
+        raise ValueError(f"Invalid token: {e}")

@@ -1,37 +1,42 @@
-from pydantic import BaseModel, Field
+from marshmallow import Schema, fields, validate
+
+class RegisterRequestSchema(Schema):
+    email = fields.Email(required=True)
+    password = fields.Str(required=True, validate=validate.Length(min=8))
 
 
-class RegisterRequest(BaseModel):
-    email: str
-    password: str = Field(..., min_length=8)
+class RegisterResponseSchema(Schema):
+    id = fields.Str(required=True)
+    email = fields.Str(required=True)
+    access_token = fields.Str(required=True)
+    refresh_token = fields.Str(required=True)
+    message = fields.Str(required=True)
 
-class RegisterResponse(BaseModel):
-    id: str
-    email: str
-    access_token: str
-    refresh_token: str
-    message: str
 
-class LoginRequest(BaseModel):
-    email: str
-    password: str
+class LoginRequestSchema(Schema):
+    email = fields.Email(required=True)
+    password = fields.Str(required=True)
 
-class LoginResponse(BaseModel):
-    id: str
-    email: str
-    access_token: str
-    refresh_token: str
-    message: str
 
-class RefreshToAccessRequest(BaseModel):
-    refresh: str
+class LoginResponseSchema(Schema):
+    id = fields.Str(required=True)
+    email = fields.Str(required=True)
+    access_token = fields.Str(required=True)
+    refresh_token = fields.Str(required=True)
+    message = fields.Str(required=True)
 
-class RefreshToAccessResponse(BaseModel):
-    access: str
 
-class LogoutRequest(BaseModel):
-    refresh: str
+class RefreshToAccessRequestSchema(Schema):
+    refresh = fields.Str(required=True)
 
-class LogoutResponse(BaseModel):
-    message: str
 
+class RefreshToAccessResponseSchema(Schema):
+    access = fields.Str(required=True)
+
+
+class LogoutRequestSchema(Schema):
+    refresh = fields.Str(required=True)
+
+
+class LogoutResponseSchema(Schema):
+    message = fields.Str(required=True)

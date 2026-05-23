@@ -1,15 +1,11 @@
 # Унифицированная модель ошибки по ТЗ: {error_code, message, details}.
 # Используется для генерации одинаковых ответов при любых сбоях системы.
 
-from typing import Any
-from pydantic import BaseModel
+from marshmallow import Schema, fields
 
 
-class ErrorResponse(BaseModel):
-    """
-    Единый формат ошибок (по ТЗ)
-    """
-    
-    error_code: str
-    message: str
-    details: dict[str, Any] = {}
+class ErrorResponse(Schema):
+    """Единый формат ошибок (по ТЗ)"""
+    error_code = fields.Str(required=True)
+    message = fields.Str(required=True)
+    details = fields.Dict(required=False, missing={})
