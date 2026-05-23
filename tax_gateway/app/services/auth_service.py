@@ -45,16 +45,16 @@ class AuthService:
     def login(self, login_request: LoginRequest) -> AuthenticationResult:
         user = self._auth_repository.find_user_by_email(login_request.email)
 
-        if not user or not security_manager.check_password(login_request.password, user.hashed_password):
+        if not user or not security_manager.check_password(login_request.password, str(user.hashed_password)):
             raise UnauthorizedException("INVALID_CREDENTIALS", "Неверный email или пароль")
 
-        if not user.is_active:
+        if user.is_active is False:
             raise ForbiddenException("USER_INACTIVE", "Аккаунт деактивирован")
 
         access = security_manager.create_access_token(data={"email": login_request.email})
         refresh_new = security_manager.create_refresh_token(data={"email": login_request.email})
 
-        return AuthenticationResult(str(user.id), user.email, access, refresh_new)
+        return AuthenticationResult(str(user.id), str(user.email), access, refresh_new)
 
     def refresh(self, refresh_to_access_request: RefreshToAccessRequest) -> str:
         payload = security_manager.decode_token(refresh_to_access_request.refresh)

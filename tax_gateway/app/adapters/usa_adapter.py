@@ -1,4 +1,5 @@
 ﻿import uuid
+from dataclasses import asdict
 from tax_gateway.app.adapters.base import AbstractTaxAdapter
 from tax_gateway.app.schemas.tax import TaxReportRequest
 from tax_gateway.app.services.dto.tax.send_report_result import SendReportResult
@@ -18,7 +19,7 @@ class UsaTaxAdapter(AbstractTaxAdapter):
 
     def send_report(self, request_data: TaxReportRequest) -> SendReportResult:
         # Конвертируем Pydantic-модель в словарь (для Pydantic v2)
-        payload = request_data.model_dump() 
+        payload = asdict(request_data)
         
         # Вызываем умный метод из базового класса для отправки отчета в IRS
         response = self._make_request("POST", "irs/v1/report", json=payload, timeout=15)

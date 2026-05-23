@@ -1,4 +1,5 @@
 from marshmallow import Schema, fields, validate
+from dataclasses import dataclass
 
 class RegisterRequestSchema(Schema):
     email = fields.Email(required=True)
@@ -40,3 +41,21 @@ class LogoutRequestSchema(Schema):
 
 class LogoutResponseSchema(Schema):
     message = fields.Str(required=True)
+
+@dataclass
+class LoginRequest:
+    email: str
+    password: str
+
+@dataclass
+class RefreshToAccessRequest:
+    refresh: str
+
+@dataclass
+class LogoutRequest:
+    refresh: str
+
+@dataclass
+class RegisterRequest:
+    email: str
+    password: str

@@ -6,16 +6,44 @@ from tax_gateway.app.core.config import Config
 from tax_gateway.app.core.exceptions import TaxGatewayException
 
 
+
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    app.config['SWAGGER'] = {
-        'title': 'Unified Tax API Gateway',
-        'uiversion': 3,
-        'openapi': '3.0.0'
+    swagger_config = {
+        "headers": [],
+        "specs": [
+            {
+                "endpoint": 'apispec_1',
+                "route": '/apispec_1.json',
+                "rule_filter": lambda rule: True,
+                "model_filter": lambda tag: True,
+            }
+        ],
+        "static_url_path": "/flasgger_static",
+        "openapi": "3.0.0",
     }
-    Swagger(app)
+
+    swagger_template = {
+        "openapi": "3.0.0",
+        "info": {
+            "title": "Unified Tax API Gateway",
+            "version": "0.0.1",
+        },
+        "components": {
+            "securitySchemes": {
+                "Bearer": {
+                    "type": "http",
+                    "scheme": "bearer",
+                    "bearerFormat": "JWT",
+                }
+            }
+        },
+        "security": [{"Bearer": []}]
+    }
+
+    Swagger(app, template=swagger_template, config=swagger_config)
 
     from tax_gateway.app.db.session import init_db
     db = init_db(app.config['SQLALCHEMY_DATABASE_URI'])

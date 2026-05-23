@@ -7,18 +7,18 @@ from passlib.context import CryptContext
 from .config import Config
 from .exceptions import UnauthorizedException
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
 
 
 class SecurityManager:
 
     @staticmethod
     def check_password(password: str, hash_password: str) -> bool:
-        return pwd_context.verify(password, hash_password)
+        return pwd_context.verify(password[:72], hash_password)
 
     @staticmethod
     def get_hash_password(password: str) -> str:
-        return pwd_context.hash(password)
+        return pwd_context.hash(password[:72])
 
     @staticmethod
     def create_access_token(data: dict[str, Any]) -> str:

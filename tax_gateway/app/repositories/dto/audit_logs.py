@@ -5,7 +5,7 @@ Copyright (C) 2026  Andrei Kekishev
 from typing import Any, Optional
 import uuid
 
-from pydantic import UUID4
+import uuid
 
 from tax_gateway.app.schemas.tax import TaxReportRequest
 
@@ -22,7 +22,7 @@ class AuditLogs:
         "_request_processing_time"
     )
 
-    _idempotency_key: Optional[UUID4]
+    _idempotency_key: Optional[uuid.UUID]
     _user_id: Optional[str]
     _country: str
     _request_payload: Optional[dict[str, Any]]
@@ -57,15 +57,15 @@ class AuditLogs:
         self._request_processing_time = request_processing_time
 
     @property
-    def idempotency_key(self) -> Optional[UUID4]:
+    def idempotency_key(self) -> Optional[uuid.UUID]:
         return self._idempotency_key
 
     @idempotency_key.getter
-    def idempotency_key(self) -> Optional[UUID4]:
+    def idempotency_key(self) -> Optional[uuid.UUID]:
         return self._idempotency_key
 
     @idempotency_key.setter
-    def idempotency_key(self, idempotency_key: Optional[UUID4]) -> None:
+    def idempotency_key(self, idempotency_key: Optional[uuid.UUID]) -> None:
         if idempotency_key is not None and not isinstance(idempotency_key, uuid.UUID):
             raise TypeError
 

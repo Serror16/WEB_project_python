@@ -11,7 +11,9 @@ class Config:
         "DATABASE_URL",
         "postgresql://postgres:postgres@127.0.0.1:5432/postgres"
     )
-
+    #дефолт значения urls
+    RUSSIA_API_URL = os.getenv("RUSSIA_API_URL", "http://localhost:8001")
+    USA_API_URL = os.getenv("USA_API_URL", "http://localhost:8002")
     # замена +asyncpg из старого .env
     SQLALCHEMY_DATABASE_URI = raw_db_url.replace("+asyncpg", "")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -24,4 +26,5 @@ class Config:
 
     API_VERSION = os.getenv("API_VERSION", "v1")  # [cite: 9]
     REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", 30))  # [cite: 9]
+
 settings = Config()

@@ -1,4 +1,5 @@
 ﻿import uuid
+from dataclasses import asdict
 from tax_gateway.app.adapters.base import AbstractTaxAdapter
 from tax_gateway.app.schemas.tax import TaxReportRequest
 from tax_gateway.app.services.dto.tax.send_report_result import SendReportResult
@@ -13,7 +14,7 @@ class RussiaTaxAdapter(AbstractTaxAdapter):
 
     def send_report(self, request_data: TaxReportRequest) -> SendReportResult:
         # Для Pydantic v2
-        payload = request_data.model_dump() 
+        payload = asdict(request_data)
         
         # Просто вызываем наш умный метод _make_request!
         response = self._make_request("POST", "fns/v1/report", json=payload, timeout=10)
