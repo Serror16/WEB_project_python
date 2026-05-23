@@ -165,3 +165,99 @@ def check_status(current_user, report_id):
         "status": result.status,
         "message": "Success"
     })), 200
+
+@tax_bp.route('/validate', methods=['POST'])
+@token_required
+def validate_tax_data(current_user):
+    """
+    ---
+    security:
+      - Bearer: []
+    tags:
+      - Tax
+    summary: Предварительная проверка налоговых данных
+    parameters:
+      - in: query
+        name: country
+        required: true
+        schema:
+          type: string
+          example: "RU"
+        description: Код страны (RU или US)
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - taxpayer_id
+              - amount
+              - currency
+              - year
+              - idempotency_key
+            properties:
+              taxpayer_id:
+                type: string
+                example: "7712345678"
+              amount:
+                type: number
+                example: 150000.50
+              currency:
+                type: string
+                example: "RUB"
+              year:
+                type: integer
+                example: 2023
+              idempotency_key:
+                type: string
+                example: "123e4567-e89b-12d3-a456-426614174000"
+              payload:
+                type: object
+                example: {"document_type": "NDFL-3"}
+    responses:
+      200:
+        description: Результат валидации
+      400:
+        description: Ошибка запроса (отсутствует country или JSON)
+      401:
+        description: Не авторизован
+      422:
+        description: Ошибка валидации структуры данных
+    """
+
+    country = request.args.get('country')
+    if not country:
+        return jsonify({"error_code": "MISSING_COUNTRY", "message": "Параметр country обязателен", "details": {}}), 400
+
+    json_data = request.get_json()
+    if not json_data:
+        return jsonify(
+            {"error_code": "INVALID_JSON", "message": "Тело запроса должно быть валидным JSON", "details": {}}), 400
+
+    try:
+        validated_data = cast(dict, TaxReportRequestSchema().load(json_data))
+    except ValidationError as err:
+        return jsonify({"error_code": "VALIDATION_ERROR", "message": "Ошибка валидации", "details": err.messages}), 422
+
+    report_dto = TaxReportRequest(
+        taxpayer_id=validated_data["taxpayer_id"],
+        amount=validated_data["amount"],
+        currency=validated_data["currency"],
+        year=validated_data["year"],
+        idempotency_key=uuid.UUID(str(validated_data["idempotency_key"])),
+        country=country,
+        user_id=str(current_user.id)
+    )
+
+    db = get_db()
+    russia_adapter = RussiaTaxAdapter(base_url=Config.RUSSIA_API_URL)
+    usa_adapter = UsaTaxAdapter(base_url=Config.USA_API_URL)
+    service = TaxService(db, russia_adapter, usa_adapter)
+
+    result = service.validate(report_dto)
+
+    return jsonify({
+        "is_valid": result.is_valid,
+        "message": "Ошибок не найдено" if result.is_valid else "Данные отклонены налоговой"
+    }), 200
