@@ -60,7 +60,7 @@ def submit_report(current_user):
         "country": country,
         "idempotency_key": str(validated_data["idempotency_key"]),
         "taxpayer_id": validated_data["taxpayer_id"],
-        "amount": str(validated_data["amount"]),  # Decimal в строку
+        "amount": str(validated_data["amount"]),
         "currency": validated_data["currency"],
         "year": validated_data["year"],
         "payload": validated_data.get("payload", {})

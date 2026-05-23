@@ -8,7 +8,7 @@ from app.db.session import db_session
 from app.db.models import User, BlacklistedToken
 from app.api.v1.dependencies import token_required, check_refresh_token_in_blacklist, get_refresh_token_user
 from app.schemas.auth import LoginRequestSchema, LogoutRequestSchema, LoginResponseSchema, LogoutResponseSchema, RefreshToAccessRequestSchema, RefreshToAccessResponseSchema
-from tax_gateway.app.core.security import create_access_token, create_refresh_token
+from tax_gateway.app.core.security import security_manager
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -77,8 +77,8 @@ def login():
         }), 403
     
     # Создание токенов
-    access_token = create_access_token(user.email)
-    refresh_token = create_refresh_token(user.email)
+    access_token = security_manager.create_access_token(user.email)
+    refresh_token = security_manager.create_refresh_token(user.email)
     
     response_schema = LoginResponseSchema()
     return jsonify(response_schema.dump({
@@ -133,7 +133,7 @@ def refresh():
         }), 401
     
     # Создание нового access токена
-    new_access_token = create_access_token(user.email)
+    new_access_token = security_manager.create_access_token(user.email)
     
     response_schema = RefreshToAccessResponseSchema()
     return jsonify(response_schema.dump({
