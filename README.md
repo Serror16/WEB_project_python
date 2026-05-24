@@ -41,7 +41,7 @@ python create_tables.py
 
 ```
 # Терминал 1:
-python mock_tax_server.py
+python mock_russia_server.py
 
 # Терминал 2:
 python mock_usa_server.py
@@ -103,3 +103,77 @@ python run.py
 
 * **Суть:** В проекте используются скрипты-заглушки (mocks).
 * **Ответственность:** Имитируют работу реальной налоговой. Один мок отвечает быстро по REST, другой — медленно по SOAP, а третий специально выдает ошибку, чтобы можно было протестировать работу Retry-логики в сервисе.
+
+
+## 3. Структура проекта
+
+```text
+.
+├── .gitignore
+├── README.md                   # Документация проекта
+├── create_tables.py            # Скрипт инициализации базы данных
+├── mock_tax_server.py          # Мок-сервер для имитации ФНС (Россия)
+├── mock_usa_server.py          # Мок-сервер для имитации IRS (США)
+├── pyproject.toml              # Конфигурация проекта и зависимостей
+├── requirements.txt            # Список Python-библиотек
+├── run.py                      # Точка входа для локального запуска приложения
+└── tax_gateway/                # Основной пакет приложения
+    ├── __init__.py
+    └── app/
+        ├── __init__.py
+        ├── adapters/           # Интеграция с внешними API (Adapters Layer)
+        │   ├── __init__.py
+        │   ├── base.py
+        │   ├── russia_adapter.py
+        │   └── usa_adapter.py
+        ├── api/                # Маршрутизация и эндпоинты (API Layer)
+        │   ├── __init__.py
+        │   └── v1/
+        │       ├── __init__.py
+        │       ├── dependencies.py
+        │       ├── validators.py
+        │       └── endpoints/
+        │           ├── __init__.py
+        │           ├── auth.py
+        │           └── tax.py
+        ├── core/               # Ядро приложения: конфиги, исключения, безопасность
+        │   ├── __init__.py
+        │   ├── config.py
+        │   ├── exceptions.py
+        │   └── security.py
+        ├── db/                 # Настройки БД и SQLAlchemy моделей
+        │   ├── __init__.py
+        │   ├── models.py
+        │   └── session.py
+        ├── repositories/       # Слой работы с данными (Repository Layer)
+        │   ├── __init__.py
+        │   ├── auth_repository.py
+        │   ├── tax_repository.py
+        │   └── dto/
+        │       ├── __init__.py
+        │       └── audit_logs.py
+        ├── schemas/            # Marshmallow схемы для валидации и сериализации
+        │   ├── __init__.py
+        │   ├── auth.py
+        │   ├── errors.py
+        │   └── tax.py
+        ├── services/           # Бизнес-логика приложения (Servise Layer)
+        │   ├── __init__.py
+        │   ├── auth_service.py
+        │   ├── tax_service.py
+        │   └── dto/            # Объекты передачи данных (DTO)
+        │       ├── __init__.py
+        │       ├── auth/
+        │       │   ├── __init__.py
+        │       │   └── authentication_result.py
+        │       └── tax/
+        │           ├── __init__.py
+        │           ├── get_status_result.py
+        │           ├── send_report_result.py
+        │           ├── status.py
+        │           └── validate_result.py
+        └── utils/              # Вспомогательные утилиты и парсеры
+            ├── __init__.py
+            ├── logger.py
+            └── xml_parser.py
+```

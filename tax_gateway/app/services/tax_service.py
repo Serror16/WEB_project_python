@@ -4,7 +4,6 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from tax_gateway.app.adapters.base import AbstractTaxAdapter
 from tax_gateway.app.core.exceptions import ExternalAdapterError, ExternalServiceError, BadRequestError
 from tax_gateway.app.repositories.dto.audit_logs import AuditLogs
 from tax_gateway.app.repositories.tax_repository import TaxRepository

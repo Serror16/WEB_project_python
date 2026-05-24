@@ -1,7 +1,4 @@
 
-"""
-Copyright (C) 2026  Andrei Kekishev
-"""
 from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
