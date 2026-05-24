@@ -18,18 +18,18 @@ app.include_router(api_v1_router)
 # === ГЛОБАЛЬНЫЙ ОБРАБОТЧИК ОШИБОК ===
 # Ловим любую кастомную ошибку (например, из адаптера) и превращаем её в красивый JSON по ТЗ
 @app.exception_handler(TaxGatewayException)
-async def custom_tax_exception_handler(request: Request, exc: TaxGatewayException):
+async def tax_gateway_exception_handler(request: Request, e: TaxGatewayException):
     return JSONResponse(
-        status_code=exc.status_code,
+        status_code=e.status_code,
         content={
-            "error_code": exc.error_code,
-            "message": exc.message,
-            "details": exc.details
+            "error_code": e.error_code,
+            "message": e.message,
+            "details": e.details
         }
     )
 
 @app.exception_handler(ExternalServiceError)
-async def custom_tax_exception_handler(request: Request, e: ExternalServiceError):
+async def external_service_exception_handler(request: Request, e: ExternalServiceError):
     return JSONResponse(
         status_code=e.status_code,
         content={
@@ -40,7 +40,7 @@ async def custom_tax_exception_handler(request: Request, e: ExternalServiceError
     )
 
 @app.exception_handler(BadRequestError)
-async def custom_tax_exception_handler(request: Request, e: BadRequestError):
+async def bad_request_exception_handler(request: Request, e: BadRequestError):
     return JSONResponse(
         status_code=e.status_code,
         content={

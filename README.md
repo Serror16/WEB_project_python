@@ -138,3 +138,76 @@ uvicorn tax_gateway.app.main:app --reload --port 8000
 
 
 * **Ответственность:** Имитируют работу реальной налоговой. Один мок отвечает быстро по REST, другой — медленно по SOAP, а третий специально выдает ошибку, чтобы можно было протестировать работу Retry-логики в сервисе.
+
+## 3. Структура проекта
+
+```text
+.
+├── .gitignore
+├── README.md                                       # Основная документация проекта
+├── create_tables.py                                # Скрипт инициализации базы данных
+├── mock_tax_server.py                              # Мок-сервер для имитации ФНС (Россия)
+├── mock_usa_server.py                              # Мок-сервер для имитации IRS (США)
+├── pyproject.toml                                  # Конфигурация проекта
+├── requirements.txt                                # Список Python-библиотек
+└── tax_gateway/
+    ├── __init__.py
+    └── app/
+        ├── __init__.py
+        ├── main.py                                 # Точка входа FastAPI приложения и глобальные обработчики ошибок
+        ├── adapters/                               # Интеграция с внешними API (Adapter Layer)
+        │   ├── __init__.py
+        │   ├── base.py
+        │   ├── russia_adapter.py
+        │   └── usa_adapter.py
+        ├── api/                                    # Маршрутизация и API эндпоинты (API Layer)
+        │   ├── __init__.py
+        │   └── v1/
+        │       ├── __init__.py
+        │       ├── dependencies.py                 # Зависимости: получение сессии БД, проверка токена
+        │       ├── router.py                       # Главный роутер, объединяющий все эндпоинты v1
+        │       └── endpoints/
+        │           ├── __init__.py
+        │           ├── auth.py                     # Эндпоинты авторизации (регистрация, логин)
+        │           └── tax.py                      # Эндпоинты налогов (валидация, отправка, статус)
+        ├── core/                                   # Ядро приложения: настройки, безопасность, кастомные ошибки
+        │   ├── __init__.py
+        │   ├── config.py
+        │   ├── exceptions.py
+        │   └── security.py
+        ├── db/                                     # Настройка подключения к БД и SQLAlchemy модели
+        │   ├── __init__.py
+        │   ├── models.py
+        │   └── session.py
+        ├── repositories/                           # Слой работы с бд (Repository Layer)
+        │   ├── __init__.py
+        │   ├── auth_repository.py
+        │   ├── tax_repository.py
+        │   └── dto/
+        │       ├── __init__.py
+        │       └── audit_logs.py
+        ├── schemas/                                # Pydantic схемы для валидации запросов и ответов
+        │   ├── __init__.py
+        │   ├── auth.py
+        │   ├── errors.py
+        │   └── tax.py
+        ├── services/                               # Бизнес-логика приложения (Servise Layer)
+        │   ├── __init__.py
+        │   ├── auth_service.py
+        │   ├── tax_service.py
+        │   └── dto/                                # DTO
+        │       ├── __init__.py
+        │       ├── auth/
+        │       │   ├── __init__.py
+        │       │   └── authentication_result.py
+        │       └── tax/
+        │           ├── __init__.py
+        │           ├── get_status_result.py
+        │           ├── send_report_result.py
+        │           ├── status.py
+        │           └── validate_result.py
+        └── utils/                                  # Вспомогательные утилиты
+            ├── __init__.py
+            ├── logger.py                           # Настройка глобального логирования
+            └── xml_parser.py                       # Конвертер JSON в XML
+```

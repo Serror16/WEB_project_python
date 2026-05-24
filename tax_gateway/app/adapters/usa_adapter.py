@@ -69,5 +69,4 @@ class UsaTaxAdapter(AbstractTaxAdapter):
         )
         
         data = response.json()
-        # Допустим, API США возвращает булево поле "valid" вместо "is_valid"
         return ValidateResult(is_valid=data.get("valid", False))
