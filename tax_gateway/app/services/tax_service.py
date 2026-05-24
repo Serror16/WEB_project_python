@@ -91,3 +91,22 @@ class TaxService:
         except ExternalAdapterError as e:
             self._logger.error(e.message)
             raise ExternalServiceError(e)
+
+    def validate(self, tax_report_request: TaxReportRequest) -> ValidateResult:
+        self._logger.info(f"TaxService: called validate; tax_report_request={tax_report_request}")
+        
+        country: Optional[str] = tax_report_request.country
+
+        if country == "US":
+            adapter = self._usa_adapter
+        elif country == "RU":
+            adapter = self._russia_adapter
+        else:
+            raise BadRequestError("Unsupported country has been provided", time.perf_counter())
+
+        try:
+            response: ValidateResult = adapter.validate(tax_report_request)
+            return response
+        except ExternalAdapterError as e:
+            self._logger.error(e.message)
+            raise ExternalServiceError(e)

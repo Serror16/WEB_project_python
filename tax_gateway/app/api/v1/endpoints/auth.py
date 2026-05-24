@@ -54,21 +54,21 @@ def login():
     if not json_data:
         return jsonify({"error_code": "INVALID_JSON", "message": "Тело запроса должно быть валидным JSON", "details": {}}), 400
     
-    # 1. Валидация Marshmallow
+
     try:
         data = cast(dict, LoginRequestSchema().load(json_data))
     except ValidationError as err:
         return jsonify({"error_code": "VALIDATION_ERROR", "message": "Ошибка валидации данных", "details": err.messages}), 422
     
-    # 2. Сборка DTO и инициализация сервиса
+
     login_request_dto = LoginRequest(email=data['email'], password=data['password'])
     db = get_db()
     auth_service = AuthService(db)
     
-    # 3. Вызов бизнес-логики (ошибки сами улетят в глобальный обработчик __init__.py)
+
     result = auth_service.login(login_request_dto)
     
-    # 4. Формирование ответа
+
     return jsonify(LoginResponseSchema().dump({
         "id": result.id,
         "email": result.email,

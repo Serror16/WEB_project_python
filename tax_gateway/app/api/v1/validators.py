@@ -11,7 +11,7 @@ def validate_request(schema_class: Type[Schema]):
     Использование:
     @validate_request(TaxReportRequest)
     def create_report(data):
-        # data - уже валидированный словарь
+
         ...
     """
     def decorator(f):

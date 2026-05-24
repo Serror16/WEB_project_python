@@ -13,11 +13,11 @@ class TaxReportRequestSchema(Schema):
     amount = fields.Decimal(required=True, places=2, validate=validate.Range(min=0.01))
     currency = fields.Str(required=True, validate=validate.Length(min=3, max=3))
     year = fields.Int(required=True, validate=validate.Range(min=2000, max=2100))
-    # Остальные поля - через payload
+
     payload = fields.Dict(required=False, load_default={})
 
 
-# модель для ответа
+
 class TaxReportResponseSchema(Schema):
     status = fields.Str(required=True)
     report_id = fields.Str(required=True)

@@ -17,7 +17,7 @@ class ExternalAdapterError(TaxGatewayException):
             error_code="EXTERNAL_SERVICE_ERROR",
             message=message,
             details=details,
-            status_code=502 # Bad Gateway
+            status_code=502
         )
 
 class ExternalServiceError(TaxGatewayException):
